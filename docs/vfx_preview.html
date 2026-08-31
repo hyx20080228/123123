@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>记忆时空 · 打击感动效预览</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; image-rendering: pixelated; }
+  html,body { background:#0a0906; color:#e8e2d2; font-family:"Courier New",monospace; }
+  #wrap { display:flex; flex-direction:column; align-items:center; gap:10px; padding:14px; min-height:100vh; }
+  h1 { font-size:16px; letter-spacing:2px; color:#d7c68a; }
+  .sub { font-size:11px; color:#8d8878; }
+  #stage { position:relative; width:100%; max-width:960px; aspect-ratio:16/9; border:2px solid #3a3428; background:#15110b; }
+  canvas { width:100%; height:100%; display:block; image-rendering: pixelated; }
+  #panel { width:100%; max-width:960px; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+  .ctl { border:2px solid #4a4232; background:#1b1710; padding:8px 10px; display:flex; flex-direction:column; gap:6px; }
+  .ctl label { font-size:12px; color:#cfc8b2; display:flex; justify-content:space-between; align-items:center; gap:6px; cursor:pointer; }
+  .ctl .name { font-size:11px; color:#9a937f; letter-spacing:1px; }
+  button { font-family:inherit; font-size:12px; padding:7px 10px; cursor:pointer;
+    background:#262014; color:#f0e6c8; border:2px solid #6b5c38; border-bottom-width:4px; letter-spacing:1px; }
+  button:active { transform:translateY(2px); border-bottom-width:2px; }
+  button.on { background:#5c4a1e; border-color:#d7c68a; color:#fff8e0; }
+  input[type=range] { width:100%; accent-color:#d7c68a; }
+  .val { color:#e8d99a; font-size:11px; }
+  .hint { font-size:10px; color:#6f6a5c; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>记忆时空 · 打击感动效预览</h1>
+  <div class="sub">训练木桩演示区 —— 可逐项开关五件套、调参数、触发故障动效</div>
+  <div id="stage"><canvas id="cv" width="960" height="540"></canvas></div>
+  <div id="panel">
+    <div class="ctl">
+      <div class="name">自动攻击（每 0.7s 挥一刀）</div>
+      <button id="btnAuto" class="on">自动攻击 ON</button>
+      <button id="btnHit">手动挥刀</button>
+    </div>
+    <div class="ctl">
+      <div class="name">顿帧 hit-stop</div>
+      <button id="btnStop" class="on">顿帧 ON</button>
+      <label>时长 <span class="val" id="vStop">60</span>ms</label>
+      <input type="range" id="rStop" min="0" max="200" step="10" value="60">
+    </div>
+    <div class="ctl">
+      <div class="name">震屏 shake</div>
+      <button id="btnShake" class="on">震屏 ON</button>
+      <label>幅度 <span class="val" id="vShake">4</span>px</label>
+      <input type="range" id="rShake" min="0" max="12" step="1" value="4">
+    </div>
+    <div class="ctl">
+      <div class="name">受击闪白 flash</div>
+      <button id="btnFlash" class="on">闪白 ON</button>
+      <label>时长 <span class="val" id="vFlash">100</span>ms</label>
+      <input type="range" id="rFlash" min="0" max="300" step="20" value="100">
+    </div>
+    <div class="ctl">
+      <div class="name">击退 knockback</div>
+      <button id="btnKnock" class="on">击退 ON</button>
+      <label>距离 <span class="val" id="vKnock">18</span>px</label>
+      <input type="range" id="rKnock" min="0" max="60" step="2" value="18">
+    </div>
+    <div class="ctl">
+      <div class="name">伤害数字 numbers</div>
+      <button id="btnNum" class="on">数字 ON</button>
+      <label>样式 <span class="val" id="vNum">弹跳</span></label>
+      <input type="range" id="rNum" min="0" max="3" step="1" value="0">
+      <div class="hint">0弹跳 1直线 2淡出 3无动画</div>
+    </div>
+    <div class="ctl">
+      <div class="name">故障波纹 glitch wave</div>
+      <button id="btnGlitch">触发故障波纹</button>
+      <label>强度 <span class="val" id="vGlitch">8</span>px</label>
+      <input type="range" id="rGlitch" min="2" max="20" step="1" value="8">
+    </div>
+    <div class="ctl">
+      <div class="name">边界崩解 edge dissolve</div>
+      <button id="btnEdge" class="on">边界 ON</button>
+      <label>强度 <span class="val" id="vEdge">2</span></label>
+      <input type="range" id="rEdge" min="0" max="6" step="1" value="2">
+    </div>
+  </div>
+  <div class="sub">参考值：普攻 顿帧60ms/震屏4px/击退18px · 重击 顿帧120ms/震屏8px/击退50px</div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  const W = 960, H = 540;
+
+  // ---------- 参数 ----------
+  const S = {
+    auto:true, stop:true, shake:true, flash:true, knock:true, num:true,
+    edge:true,
+    stopMs:60, shakePx:4, flashMs:100, knockPx:18,
+    numStyle:0, glitchPx:8, edgeLv:2,
+    hitMs:70, heavyMs:130, heavyShake:8, heavyKnock:50
+  };
+  const $ = id => document.getElementById(id);
+  // ---------- 状态 ----------
+  let dummy = { x:640, y:430, dx:0, flashT:0 };
+  let nums = [], slashes = [], parts = [];
+  let hitStopT = 0, shakeT = 0, shakeMag = 0, glitchT = 0;
+  let autoT = 0, last = performance.now();
+  let heavyNext = false; // 每4刀出一次重击
+
+  // ---------- UI 绑定 ----------
+  function bindToggle(id, key){
+    $(id).addEventListener('click', ()=>{ S[key]=!S[key]; $(id).classList.toggle('on', S[key]); });
+  }
+  bindToggle('btnAuto','auto'); bindToggle('btnStop','stop'); bindToggle('btnShake','shake');
+  bindToggle('btnFlash','flash'); bindToggle('btnKnock','knock'); bindToggle('btnNum','num');
+  bindToggle('btnEdge','edge');
+  $('btnHit').addEventListener('click', ()=>attack(false));
+  $('btnGlitch').addEventListener('click', ()=>{ glitchT = 420; });
+  function bindRange(id, key, fmt, apply){
+    $(id).addEventListener('input', ()=>{ S[key] = Number($(id).value); $(fmt).textContent = apply?apply(S[key]):S[key]; });
+  }
+  bindRange('rStop','stopMs','vStop');
+  bindRange('rShake','shakePx','vShake');
+  bindRange('rFlash','flashMs','vFlash');
+  bindRange('rKnock','knockPx','vKnock');
+  bindRange('rGlitch','glitchPx','vGlitch');
+  bindRange('rEdge','edgeLv','vEdge');
+  bindRange('rNum','numStyle','vNum', v=>['弹跳','直线','淡出','无动画'][v]);
+
+  // ---------- 攻击 ----------
+  function attack(heavy){
+    slashes.push({t:0, dur:heavy?180:120, heavy});
+    const stopMs = heavy?S.heavyMs:S.stopMs;
+    if(S.stop) hitStopT = stopMs;
+    if(S.shake){ shakeMag = heavy?S.heavyShake:S.shakePx; shakeT = 160; }
+    if(S.flash) dummy.flashT = S.flashMs;
+    if(S.knock) dummy.dx = -(heavy?S.heavyKnock:S.knockPx);
+    if(S.num){
+      const dmg = 10 + Math.floor(Math.random()*16);
+      const crit = Math.random() < 0.15 || heavy;
+      nums.push({
+        x: dummy.x + (Math.random()*30-15), y: dummy.y - 96,
+        vx:(Math.random()*40-20), vy:-90 - Math.random()*40,
+        t:0, life: 700 + Math.random()*200,
+        dmg, crit,
+        col: crit ? '#ffd34d' : (heavy ? '#e8e2d2' : '#ffffff')
+      });
+      if(parts.length < 40){
+        for(let i=0;i<(heavy?10:4);i++){
+          parts.push({ x:dummy.x+Math.random()*40-20, y:dummy.y-60+Math.random()*40,
+            vx:(Math.random()-0.5)*120, vy:-Math.random()*120, t:0, life:400+Math.random()*300,
+            c: ['#c8b98a','#8d8878','#d7c68a','#6b5c38'][i%4] });
+        }
+      }
+    }
+  }
+
+  // ---------- 绘制 ----------
+  const bg = document.createElement('canvas'); bg.width=W; bg.height=H;
+  function drawScene(){
+    const g = bg.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    // 背景
+    g.fillStyle = '#15110b'; g.fillRect(0,0,W,H);
+    // 网格
+    g.strokeStyle = 'rgba(90,84,64,0.18)'; g.lineWidth = 1;
+    for(let x=0;x<W;x+=32){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); }
+    for(let y=0;y<H;y+=32){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+    // 地面阴影
+    g.fillStyle = 'rgba(0,0,0,0.45)';
+    g.fillRect(dummy.x-52, dummy.y+46, 104, 16);
+    // 木桩
+    const d = dummy;
+    const dx = Math.round(d.x), dy = Math.round(d.y);
+    const fl = d.flashT>0;
+    // 柱子
+    g.fillStyle = fl?'#ffffff':'#6b4c2f'; g.fillRect(dx-8, dy-70, 16, 120);
+    g.fillStyle = fl?'#f0f0f0':'#8a6238';
+    g.fillRect(dx-10, dy-70, 4, 120); g.fillRect(dx+6, dy-70, 4, 120);
+    // 身体（草人）
+    g.fillStyle = fl?'#ffffff':'#c8a35a';
+    g.fillRect(dx-26, dy-58, 52, 40);
+    g.fillStyle = fl?'#f5f5f5':'#a8834a';
+    for(let i=0;i<4;i++) g.fillRect(dx-22, dy-50+i*10, 44, 4);
+    // 头
+    g.fillStyle = fl?'#ffffff':'#d7c68a';
+    g.fillRect(dx-14, dy-92, 28, 24);
+    g.fillStyle = fl?'#e0e0e0':'#8d8878';
+    g.fillRect(dx-6, dy-84, 6, 6); g.fillRect(dx+2, dy-84, 6, 6);
+    // 底座
+    g.fillStyle = fl?'#f0f0f0':'#3a3428';
+    g.fillRect(dx-30, dy+56, 60, 12);
+    // 刀光
+    for(const s of slashes){
+      const p = s.t / s.dur;
+      g.save();
+      g.globalAlpha = Math.max(0, 1 - p*1.1);
+      g.fillStyle = s.heavy ? '#ffd34d' : '#ffffff';
+      const sx = dx - 60 - p*30;
+      g.fillRect(sx, dy-80, 26, 6);
+      g.fillRect(sx+26, dy-86, 18, 18);
+      g.fillRect(sx-8, dy-64, 10, 4);
+      g.restore();
+    }
+    // 木屑粒子
+    for(const p of parts){
+      g.save();
+      g.globalAlpha = Math.max(0, 1 - p.t/p.life);
+      g.fillStyle = p.c;
+      const s = 3 + Math.floor(p.t/80)%2;
+      g.fillRect(Math.round(p.x), Math.round(p.y), s, s);
+      g.restore();
+    }
+    // 伤害数字
+    if(S.num){
+      for(const n of nums){
+        const p = n.t / n.life;
+        let nx = n.x, ny = n.y;
+        if(S.numStyle===0){ ny += Math.abs(Math.sin(p*Math.PI*2.4)) * -22; }
+        else if(S.numStyle===1){ ny += -40*p; }
+        g.save();
+        g.globalAlpha = S.numStyle===3 ? 1 : Math.max(0, 1 - Math.max(0,(p-0.6))*2.5);
+        const size = n.crit ? 17 : 13;
+        g.font = size + 'px "Courier New", monospace';
+        g.textAlign = 'center';
+        g.lineWidth = 3; g.strokeStyle = '#0a0906';
+        g.strokeText(n.dmg, nx, ny);
+        g.fillStyle = n.col;
+        g.fillText(n.dmg, nx, ny);
+        g.restore();
+      }
+    }
+    // 边界崩解（数据虚空）
+    if(S.edge && S.edgeLv>0){
+      const lv = S.edgeLv;
+      for(let i=0;i<lv*6;i++){
+        const side = i%4;
+        const r = 14 + Math.floor(Math.random()*10);
+        let x,y;
+        if(side===0){ x=Math.random()*W; y=Math.random()*20; }
+        else if(side===1){ x=Math.random()*W; y=H-20+Math.random()*20; }
+        else if(side===2){ x=Math.random()*20; y=Math.random()*H; }
+        else { x=W-20+Math.random()*20; y=Math.random()*H; }
+        const roll = Math.random();
+        g.fillStyle = roll<0.5 ? '#0a0906' : (roll<0.8 ? '#c33c3c' : '#e8e2d2');
+        g.fillRect(Math.round(x), Math.round(y), r/2, r/2);
+      }
+    }
+  }
+
+  function render(){
+    // 物理更新
+    const now = performance.now();
+    let dt = now - last; last = now;
+    if(dt > 100) dt = 100;
+    if(hitStopT > 0){ hitStopT -= dt; dt = 0; }
+    dt /= 1000;
+
+    // 自动攻击
+    if(S.auto){
+      autoT += dt*1000;
+      if(autoT > 700){ autoT = 0; attack(heavyNext); heavyNext = !heavyNext; }
+    }
+    // 顿帧结束后的震屏衰减
+    if(shakeT > 0) shakeT -= dt*1000; else shakeMag = 0;
+    if(glitchT > 0) glitchT -= dt*1000;
+    // 木桩回弹
+    dummy.dx *= Math.pow(0.0018, dt); // 快速衰减
+    dummy.flashT -= dt*1000;
+    // 刀光
+    for(let i=slashes.length-1;i>=0;i--){ slashes[i].t += dt*1000; if(slashes[i].t>slashes[i].dur) slashes.splice(i,1); }
+    // 粒子
+    for(let i=parts.length-1;i>=0;i--){
+      const p=parts[i]; p.t+=dt*1000; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=260*dt;
+      if(p.t>p.life) parts.splice(i,1);
+    }
+    // 数字
+    for(let i=nums.length-1;i>=0;i--){ const n=nums[i]; n.t+=dt*1000; n.x+=n.vx*dt; n.y+=n.vy*dt; n.vy+=220*dt; if(n.t>n.life) nums.splice(i,1); }
+
+    // 场景绘制到离屏
+    drawScene();
+
+    // 主画布
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = '#0a0906'; ctx.fillRect(0,0,W,H);
+    ctx.save();
+    // 震屏
+    if(S.shake && shakeT>0){
+      const m = shakeMag * (shakeT/160);
+      ctx.translate((Math.random()*2-1)*m, (Math.random()*2-1)*m);
+    }
+    // 故障波纹：切片位移 + 红蓝错位
+    if(glitchT>0){
+      const g = S.glitchPx * (glitchT/420);
+      const slice = 14;
+      for(let y=0; y<H; y+=slice){
+        const off = (Math.random()*2-1) * g;
+        ctx.drawImage(bg, 0, y, W, slice, off, y, W, slice);
+        if(Math.random()<0.25){
+          ctx.globalAlpha = 0.35;
+          ctx.drawImage(bg, 0, y, W, slice, off+(Math.random()<0.5?-6:6), y, W, slice);
+          ctx.globalAlpha = 1;
+        }
+      }
+      // 色差条
+      ctx.fillStyle = 'rgba(195,60,60,0.12)';
+      if(Math.random()<0.6) ctx.fillRect(Math.random()*W, Math.random()*H, Math.random()*240+40, 4);
+      ctx.fillStyle = 'rgba(120,180,220,0.12)';
+      if(Math.random()<0.6) ctx.fillRect(Math.random()*W, Math.random()*H, Math.random()*240+40, 4);
+    } else {
+      ctx.drawImage(bg, 0, 0);
+    }
+    ctx.restore();
+    // 闪白（覆盖层，作用于受击对象，这里简化全屏微闪+木桩本体已闪白）
+    if(S.flash && dummy.flashT>0){
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.10 * Math.min(1, dummy.flashT/40)) + ')';
+      ctx.fillRect(0,0,W,H);
+    }
+    requestAnimationFrame(render);
+  }
+  render();
+})();
+</script>
+</body>
+</html>
