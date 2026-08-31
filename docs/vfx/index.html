@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>记忆时空 · 动效 GIF 图库</title>
+<title>记忆时空 · 动效图库</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#0a0906; color:#e8e2d2; font-family:"Courier New",monospace; padding:16px; }
@@ -12,42 +12,50 @@
   .card { border:2px solid #3a3428; background:#15110b; padding:12px; margin-bottom:18px; }
   .card h2 { font-size:14px; color:#cfc8b2; margin-bottom:2px; }
   .card p { font-size:11px; color:#8d8878; margin-bottom:10px; line-height:1.6; }
-  .card img { width:100%; image-rendering: pixelated; border:1px solid #3a3428; }
-  .dl { display:inline-block; margin-top:10px; padding:8px 16px; background:#262014; color:#f0e6c8;
+  .card video, .card img { width:100%; image-rendering: pixelated; border:1px solid #3a3428; background:#000; }
+  .dl { display:inline-block; margin:10px 8px 0 0; padding:8px 16px; background:#262014; color:#f0e6c8;
     border:2px solid #6b5c38; border-bottom-width:4px; text-decoration:none; font-size:12px; letter-spacing:1px; }
   .dl:active { transform:translateY(2px); border-bottom-width:2px; }
+  .dl.mp4 { border-color:#4a6b8a; }
+  .tag { display:inline-block; font-size:10px; padding:2px 6px; margin-left:6px;
+    border:1px solid #6b5c38; color:#d7c68a; vertical-align:2px; }
+  .tag.hfr { border-color:#4a6b8a; color:#9fc0c4; }
 </style>
 </head>
 <body>
-  <h1>记忆时空 · 动效 GIF 图库</h1>
-  <div class="sub">4 个动效演示：长按图片或点下载按钮即可保存到手机/电脑查看</div>
+  <h1>记忆时空 · 动效图库 v2</h1>
+  <div class="sub">人形训练木人 · 细颗粒像素 · MP4=120fps（推荐观看）/ GIF=50fps（格式上限）——点「下载」保存到手机</div>
 
   <div class="card">
-    <h2>1. 打击五件套</h2>
-    <p>木桩循环挨刀：白刀光 → 顿帧 → 震屏 → 受击闪白 → 击退 → 伤害数字弹跳 → 木屑粒子；每 4 刀一次重击（黄色大数字 + 更长顿帧 + 更强震屏）</p>
-    <img src="打击五件套.gif" alt="打击五件套">
-    <a class="dl" href="打击五件套.gif" download="打击五件套.gif">下载 GIF</a>
+    <h2>1. 打击五件套 <span class="tag">GIF 50fps</span><span class="tag hfr">MP4 120fps</span></h2>
+    <p>木人循环挨刀：白刀光 → 顿帧 → 震屏 → 受击闪白 → 击退后仰 → 伤害数字弹跳 → 木屑粒子；每 4 刀一次重击（黄色大数字 + 更长顿帧 + 更强震屏）</p>
+    <video src="打击五件套.mp4" autoplay loop muted playsinline poster="打击五件套.gif"></video>
+    <a class="dl mp4" href="打击五件套.mp4" download>下载 MP4（120fps）</a>
+    <a class="dl" href="打击五件套.gif" download>下载 GIF</a>
   </div>
 
   <div class="card">
-    <h2>2. 故障波纹（Boss 转阶段）</h2>
+    <h2>2. 故障波纹（Boss 转阶段） <span class="tag">GIF 50fps</span><span class="tag hfr">MP4 120fps</span></h2>
     <p>全屏横纹位移 + 红蓝错位 + 噪点条，模仿"记忆模拟正在崩溃"</p>
-    <img src="故障波纹.gif" alt="故障波纹">
-    <a class="dl" href="故障波纹.gif" download="故障波纹.gif">下载 GIF</a>
+    <video src="故障波纹.mp4" autoplay loop muted playsinline poster="故障波纹.gif"></video>
+    <a class="dl mp4" href="故障波纹.mp4" download>下载 MP4（120fps）</a>
+    <a class="dl" href="故障波纹.gif" download>下载 GIF</a>
   </div>
 
   <div class="card">
-    <h2>3. 边界崩解（房间边缘）</h2>
-    <p>房间外墙与地面边缘的像素块持续剥落飘散，边缘有红白噪点闪烁——游戏内数字虚空边界</p>
-    <img src="边界崩解.gif" alt="边界崩解">
-    <a class="dl" href="边界崩解.gif" download="边界崩解.gif">下载 GIF</a>
+    <h2>3. 边界崩解（房间边缘） <span class="tag">GIF 50fps</span><span class="tag hfr">MP4 120fps</span></h2>
+    <p>房间外墙与地面边缘的像素块持续剥落飘散，边缘红白噪点闪烁——游戏内数字虚空边界</p>
+    <video src="边界崩解.mp4" autoplay loop muted playsinline poster="边界崩解.gif"></video>
+    <a class="dl mp4" href="边界崩解.mp4" download>下载 MP4（120fps）</a>
+    <a class="dl" href="边界崩解.gif" download>下载 GIF</a>
   </div>
 
   <div class="card">
-    <h2>4. 数据裂缝（隐藏房入口）</h2>
-    <p>隐藏房入口的墙面裂缝呼吸脉冲（2 秒循环），伴红白数据泄漏与金色火花</p>
-    <img src="数据裂缝.gif" alt="数据裂缝">
-    <a class="dl" href="数据裂缝.gif" download="数据裂缝.gif">下载 GIF</a>
+    <h2>4. 数据裂缝（隐藏房入口） <span class="tag">GIF 50fps</span><span class="tag hfr">MP4 120fps</span></h2>
+    <p>隐藏房入口的墙面裂缝呼吸脉冲（2.4 秒循环），伴红白数据泄漏与金色火花</p>
+    <video src="数据裂缝.mp4" autoplay loop muted playsinline poster="数据裂缝.gif"></video>
+    <a class="dl mp4" href="数据裂缝.mp4" download>下载 MP4（120fps）</a>
+    <a class="dl" href="数据裂缝.gif" download>下载 GIF</a>
   </div>
 </body>
 </html>
