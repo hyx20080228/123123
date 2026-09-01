@@ -5,15 +5,17 @@ class Sfx {
   muted = false;
 
   ensure() {
-    if (!this.ctx) {
-      const AC = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AC) return;
-      this.ctx = new AC();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.5;
-      this.master.connect(this.ctx.destination);
-    }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    try {
+      if (!this.ctx) {
+        const AC = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AC) return;
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = 0.5;
+        this.master.connect(this.ctx.destination);
+      }
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+    } catch { /* 无音频环境不影响游戏 */ }
   }
 
   private osc(type: OscillatorType, f0: number, f1: number, dur: number, vol: number, delay = 0) {

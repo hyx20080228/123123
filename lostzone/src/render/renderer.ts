@@ -121,11 +121,24 @@ export class RendererCtx {
           g.rect(x * TILE, y * TILE + TILE - 2.5, TILE, 2.5).fill({ color: 0x1e1a16, alpha: .8 });
         }
       }
-      const tex = this.app.renderer.generateTexture(g);
-      const spr = new Sprite(tex);
-      spr.position.set(cx * CS * TILE, cy * CS * TILE);
-      this.chunks.push(spr);
-      this.tileLayer.addChild(spr);
+      // 生成纹理失败时直接使用 Graphics（保底可玩）
+      let spr: Sprite | null = null;
+      let gDestroyed = false;
+      try {
+        const tex = this.app.renderer.generateTexture(g);
+        spr = new Sprite(tex);
+        spr.position.set(cx * CS * TILE, cy * CS * TILE);
+        g.destroy();
+        gDestroyed = true;
+      } catch {
+        g.position.set(cx * CS * TILE, cy * CS * TILE);
+      }
+      if (spr) {
+        this.chunks.push(spr);
+        this.tileLayer.addChild(spr);
+      } else if (!gDestroyed) {
+        this.tileLayer.addChild(g);
+      }
     }
   }
 
@@ -191,7 +204,13 @@ export class RendererCtx {
       cone.scale.set(3.2, 3.2);
       this.lightC.addChild(cone);
     }
-    this.app.renderer.render({ container: this.lightC, target: this.lightRT });
+    try {
+      this.app.renderer.render({ container: this.lightC, target: this.lightRT });
+      this.overlay.visible = true;
+    } catch {
+      // 光影渲染失败不影响游戏本体
+      if (this.overlay) this.overlay.visible = false;
+    }
   }
 
   // ---------- 镜头 ----------

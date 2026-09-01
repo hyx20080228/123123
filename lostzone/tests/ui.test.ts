@@ -40,6 +40,20 @@ describe('UI 层', () => {
     expect(got).toBe('cat');
   });
 
+  test('进入游戏流程：大厅隐藏 + 加载遮罩 + 错误面板', () => {
+    const ui: any = new Ui(structuredClone(DEFAULT_SAVE), () => {});
+    expect(document.querySelector('#lobby')).toBeTruthy();
+    ui.hideLobby();
+    expect(document.querySelector('#lobby')).toBeNull();          // 关键修复：大厅必须移除
+    ui.showLoading('正在生成旧城区…');
+    expect(document.getElementById('loading-overlay')).toBeTruthy();
+    ui.hideLoading();
+    expect(document.getElementById('loading-overlay')).toBeNull();
+    ui.showError(new Error('测试错误'));
+    expect(document.getElementById('error-overlay')).toBeTruthy();
+    document.getElementById('error-overlay')!.remove();
+  });
+
   test('回收站：购买升级 & 出售', () => {
     const save = structuredClone(DEFAULT_SAVE);
     save.gold = 10000;

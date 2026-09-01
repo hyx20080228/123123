@@ -77,6 +77,53 @@ export class Ui implements HudApi {
 
   private persist() {}
 
+  // ================= 进入游戏 =================
+  /** 隐藏大厅（进入游戏时必须调用，否则大厅会遮挡游戏画面） */
+  hideLobby() {
+    this.root.querySelector('#lobby')?.remove();
+  }
+
+  /** 全屏加载遮罩 */
+  showLoading(msg = '正在加载…') {
+    let el = document.getElementById('loading-overlay');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'loading-overlay';
+      el.style.cssText = 'position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;gap:16px;align-items:center;justify-content:center;background:rgba(10,13,18,.88);color:#eef3fa;font-family:var(--font);font-size:16px;letter-spacing:2px';
+      el.innerHTML = '<div style="font-size:20px;color:var(--amber2)">失落区 · LOST ZONE</div><div id="loading-msg">…</div><div style="width:180px;height:4px;border-radius:2px;background:#2c3648;overflow:hidden"><div class="loading-bar" style="width:40%;height:100%;background:var(--amber);border-radius:2px;animation:loading-slide 1s infinite linear"></div></div>';
+      const st = document.createElement('style');
+      st.textContent = '@keyframes loading-slide{0%{transform:translateX(-100%)}100%{transform:translateX(280%)}}';
+      el.appendChild(st);
+      document.body.appendChild(el);
+    }
+    const m = el.querySelector('#loading-msg');
+    if (m) m.textContent = msg;
+    el.style.display = 'flex';
+  }
+  hideLoading() { document.getElementById('loading-overlay')?.remove(); }
+
+  /** 错误面板：任何启动/运行错误都会显示在这里，便于排查 */
+  showError(err: unknown) {
+    const msg = err instanceof Error ? `${err.message}\n${err.stack || ''}` : String(err);
+    const div = document.createElement('div');
+    div.id = 'error-overlay';
+    div.style.cssText = 'position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;background:rgba(8,10,14,.9)';
+    div.innerHTML = `<div class="window panel" style="width:min(680px,92vw);max-height:86vh;overflow:auto;padding:24px 28px">
+      <h2 style="color:#ff8a80;margin-bottom:10px">⚠️ 游戏运行出错</h2>
+      <pre style="white-space:pre-wrap;font:12px/1.7 monospace;color:#ffb9b2;background:#1a1214;border:1px solid #5c2623;border-radius:10px;padding:14px;max-height:50vh;overflow:auto">${msg.replace(/</g, '&lt;')}</pre>
+      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+        <button class="btn" id="err-reload">刷新重试</button>
+        <button class="btn primary" id="err-copy">复制错误信息</button>
+      </div>
+      <p style="color:var(--sub);font-size:12px;margin-top:10px">把复制的错误信息发给开发者即可快速定位问题。</p>
+    </div>`;
+    document.body.appendChild(div);
+    div.querySelector('#err-reload')!.addEventListener('click', () => location.reload());
+    div.querySelector('#err-copy')!.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(msg); } catch { /* ignore */ }
+    });
+  }
+
   // ================= 屏幕框架 =================
   private screen(id: string, html = '', closeText = '返回大厅'): void {
     const div = document.createElement('div');
