@@ -7,18 +7,24 @@
 
 ### 方式一：双击即玩（零安装，推荐）
 
-到 GitHub Releases 下载 **[失落区-可玩版.html](https://github.com/hyx20080228/123123/releases)**：
-`Releases → Latest → 失落区-可玩版.html`，下载后用 Chrome / Edge / Firefox 双击打开即可游玩。不需要装任何软件。
+到 GitHub Releases 下载 **[LostZone-Playable.html](https://github.com/hyx20080228/123123/releases)**（英文文件名版，兼容所有系统；`失落区-可玩版.html` 为同名中文别名）：
+`Releases → Latest → LostZone-Playable.html`，下载后用 Chrome / Edge / Firefox 双击打开即可游玩。不需要装任何软件。
 
 ### 方式二：一键脚本（Windows / macOS / Linux）
 
-```bash
-# Windows：双击
+```text
+# Windows（无需 Node.js）：双击
+启动测试-免安装.bat
+
+# Windows（启动本地服务器模式，需 Node.js）：双击
 启动测试-Windows.bat
 
 # macOS / Linux：终端执行
 ./启动测试-macOS-Linux.sh
 ```
+
+> ⚠️ 注意：`.bat` 脚本为纯 ASCII 编码（兼容任何 Windows 中文/英文系统），
+> 必须与 `lostzone` 文件夹或 `LostZone-Playable.html` 放在**同一个解压目录**中使用。
 
 ### 方式三：命令行（需要 Node.js ≥ 18）
 
