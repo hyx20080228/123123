@@ -398,8 +398,9 @@ export function generateWorld(): World {
   // ================= 刷新机制 v4：区域席位散布（真正打散，不贴边不成排） =================
   // 每个区域的资源物品席位按区域大小均匀铺开（确定性哈希洗牌+等距抽样，可复现）。
   // 落点满足：非墙 / 非荒野 / 不在门上 / 不压道具 / 距地图边>=8格 / 距区域边>=3格 / 距地图顶带>=12格。
-  const KEY_ITEMS = new Set(['note1','note2','note3','note4','note5','log1','log2','photo1',
-    'tape','powercell','p9','vest','smg','antir']);
+  // 关键剧情物品也参与席位散布（避免固定坐标造成"贴北墙一排"观感）
+  // 仅豁免被机关/撤离逻辑硬绑定的：powercell（撤离信标钥匙）、log2（地铁门密码）
+  const KEY_ITEMS = new Set(['powercell','log2']);
   const doorCells = new Set(Object.values(doors).map(d => d.ty * W + d.tx));
   const h32 = (x: number, y: number, z: number) => {
     let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z + 7, 2246822519);

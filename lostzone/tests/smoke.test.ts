@@ -130,7 +130,7 @@ describe('旧城区地图', () => {
       const z = w.zoneId[ty * 96 + tx];
       expect(z, `拾取 ${p.item} 不能在荒野`).not.toBe(Z.NONE);
       expect(tx, `拾取 ${p.item} 距地图西边过近`).toBeGreaterThanOrEqual(6);
-      expect(ty, `拾取 ${p.item} 距地图北边过近`).toBeGreaterThanOrEqual(6);
+      expect(ty, `拾取 ${p.item} 距地图北边过近`).toBeGreaterThanOrEqual(12);   // 顶部留带绝不贴边
       expect(tx, `拾取 ${p.item} 距地图东边过近`).toBeLessThanOrEqual(89);
       expect(ty, `拾取 ${p.item} 距地图南边过近`).toBeLessThanOrEqual(89);
       expect(isSolidTile(w.grid.cells[ty * 96 + tx]), `拾取 ${p.item} 不能嵌墙`).toBe(false);
@@ -251,7 +251,9 @@ describe('对局流程', () => {
 
   test('纸条1拾取 → 花盆解锁 → 护士站日志链', () => {
     const g: any = game;
-    g.px = 14 * 32; g.py = 12 * 32;
+    // note1 位置由 v4 席位散布决定，动态读取（不再硬编码）
+    const note1 = world.pickups.find(p => p.item === 'note1')!;
+    g.px = note1.x; g.py = note1.y;
     game.update(1 / 60);
     (game as any).tryInteract();
     expect(game.save.lore).toContain('note1');
