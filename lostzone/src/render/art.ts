@@ -74,102 +74,80 @@ function cellTex(tex: Texture, idx: number): Texture {
   return new Texture({ source: tex.source, frame: new Rectangle((idx % 3) * tw, Math.floor(idx / 3) * th, tw, th) });
 }
 
+// 部件内容像素尺寸与画布内偏移（PIL 预处理实测，用于同比例拼合）
+const PARTS_META: Record<string, { w: number; h: number; ox: number; oy: number }[]> = {
+  'cat': [{w:118,h:114,ox:69,oy:142}, {w:118,h:144,ox:69,oy:112}, {w:183,h:90,ox:36,oy:166}, {w:104,h:170,ox:76,oy:86}, {w:85,h:123,ox:85,oy:133}, {w:140,h:153,ox:58,oy:103}],
+  'rabbit': [{w:149,h:135,ox:53,oy:121}, {w:142,h:136,ox:57,oy:120}, {w:184,h:214,ox:36,oy:42}, {w:213,h:185,ox:21,oy:71}, {w:213,h:130,ox:21,oy:126}, {w:213,h:214,ox:21,oy:42}],
+  'raccoon': [{w:128,h:106,ox:64,oy:150}, {w:106,h:134,ox:75,oy:122}, {w:188,h:174,ox:34,oy:82}, {w:213,h:157,ox:21,oy:99}, {w:213,h:134,ox:21,oy:122}, {w:213,h:174,ox:21,oy:82}],
+  'fowl': [{w:105,h:100,ox:75,oy:156}, {w:146,h:122,ox:55,oy:134}, {w:179,h:94,ox:38,oy:162}, {w:130,h:120,ox:63,oy:136}, {w:102,h:95,ox:77,oy:161}, {w:99,h:87,ox:78,oy:169}],
+};
+
 function makePartsChar(char: CharDef, sheet: Texture): CharSprite {
   const c = new Container();
   c.sortableChildren = true;
   const shadow = g().ellipse(0, 2, 19, 6).fill({ color: 0x000000, alpha: 0.3 });
   shadow.zIndex = -2;
 
-  const fit = (tex: Texture, h: number) => {
-    const spr = new Sprite(tex);
-    spr.scale.set(h / tex.height);
+  // 同一全局比例 K：所有部件按素材原始大小等比显示（绝无拉伸）
+  const K = 0.19;
+  const m = PARTS_META[char.id] ?? PARTS_META.cat;
+  const cell = (i: number) => {
+    const tex = cellTex(sheet, i);
+    const cw = tex.width, chh = tex.height;
+    const mm = m[i];
+    // 纹理 frame 直接裁剪到内容区：Sprite 尺寸 = 内容尺寸，锚点基于内容
+    const fr = new Texture({ source: tex.source, frame: new Rectangle(
+      (i % 3) * cw + mm.ox, Math.floor(i / 3) * chh + mm.oy, mm.w, mm.h) });
+    const spr = new Sprite(fr);
+    spr.scale.set(K);
     return spr;
   };
-  // 内容统一高 256（格 300），显示尺寸 = 素材设计比例（不漏白、不拉伸）
-  const legs = fit(cellTex(sheet, 3), 41);
-  const torso = fit(cellTex(sheet, 1), 52);
-  const head = fit(cellTex(sheet, 0), 45);
-  const armR = fit(cellTex(sheet, 2), 47);
-  const tail = fit(cellTex(sheet, 4), 33);
-  const pack = fit(cellTex(sheet, 5), 35);
+  const legs = cell(3), torso = cell(1), head = cell(0), armR = cell(2), tail = cell(4), pack = cell(5);
+  const H = (i: number) => m[i].h * K;
+  const W = (i: number) => m[i].w * K;
 
+  // anchor 基于内容
   legs.anchor.set(0.5, 1);
   torso.anchor.set(0.5, 1);
   head.anchor.set(0.5, 1);
   tail.anchor.set(0.5, 1);
   pack.anchor.set(0.5, 1);
-  armR.anchor.set(0.08, 0.1);
+  armR.anchor.set(0.14, 0.22);   // 肩部（臂根偏上）
 
+  const legH = H(3), torH = H(1), headH = H(0);
+  const torsoY = -legH + 8;            // 腿/躯干重叠 8
+  const headY = torsoY - torH + 12;    // 头/躯干重叠 12（脖子自然衔接）
   legs.position.set(0, 0);
-  torso.position.set(0, -41);
-  head.position.set(0, -93);
-  pack.position.set(-4, -41);
-  tail.position.set(14, -50);
-  armR.position.set(15, -90);
+  torso.position.set(0, torsoY);
+  head.position.set(0, headY);
+  // 背包：缩小 72%，贴躯干正后方（头顶以上只露少许）
+  pack.scale.set(K * 0.72);
+  pack.position.set(W(1) * 0.06, torsoY + torH * 0.96);
+  // 尾巴：缩到 60%，藏躯干后面中央偏左
+  tail.scale.set(K * 0.6);
+  tail.position.set(-W(1) * 0.42, torsoY + torH * 0.5);
+  // 手臂：肩点 = 躯干上沿侧边
+  armR.position.set(W(1) * 0.46, headY + headH * 0.42);
 
-  legs.zIndex = 1; tail.zIndex = 1.2; pack.zIndex = 1.4; torso.zIndex = 2;
+  legs.zIndex = 1; tail.zIndex = 1.1; pack.zIndex = 1.3; torso.zIndex = 2;
   head.zIndex = 3; armR.zIndex = 4;
-  c.scale.set(0.86);
 
   c.addChild(shadow, legs, tail, pack, torso, head, armR);
   const empty = () => new Graphics();
-  const emptyC = () => new Container();
+  const weapon = new Container();
+  const weaponFx = empty();
+  weapon.zIndex = 5; weaponFx.zIndex = 5.5;
+  // 武器初始绑在右手（后续由 poseParts 跟随）
+  weapon.position.set(W(2) * 0.5, -H(2) * 0.32);
+  c.addChild(weapon, weaponFx);
   const base: CharSprite = {
     c, char, body: empty(), head: empty(), earL: empty(), earR: empty(),
     legL: empty(), legR: empty(), armL: empty(), armR: empty(),
-    tail: empty(), weapon: emptyC(), pack: empty(), scarf: empty(),
-    shadow, weaponFx: empty(),
+    tail: empty(), weapon, pack: empty(), scarf: empty(),
+    shadow, weaponFx,
     parts: { head, torso, armR, legs, tail, pack, aim: 0 },
   };
   return base;
-}
-
-/** 部位拼合角色动画（走路/待机/挥砍/受击/死亡） */
-function poseParts(s: CharSprite, walkT: number, moving: boolean, aimAng: number,
-  hitT: number, sprint: boolean, attackT = 0, dead = false) {
-  const P = s.parts!;
-  if (dead) {
-    s.c.rotation = Math.PI / 2 + 0.22;
-    s.c.position.y = 4;
-    s.c.alpha = 0.95;
-    return;
-  }
-  s.c.rotation = 0; s.c.alpha = 1;
-  const freq = sprint ? 14 : 9.5;
-  const sw = moving ? Math.sin(walkT * freq) : 0;
-  const bob = moving ? Math.abs(Math.sin(walkT * freq)) * 2.4 : Math.sin(walkT * 1.5) * 0.9;
-  s.c.position.y = -bob;
-
-  const flip = Math.cos(aimAng) < -0.1;
-  const a = flip ? Math.PI - aimAng : aimAng;
-  P.aim = a;
-
-  P.head.scale.x = Math.abs(P.head.scale.x) * (flip ? -1 : 1);
-  P.head.rotation = sw * 0.05 + Math.sin(walkT * 0.8) * 0.02;
-
-  P.legs.rotation = sw * 0.16;
-
-  P.tail.rotation = Math.sin(walkT * (moving ? 7 : 2.6)) * (moving ? 0.3 : 0.16);
-
-  P.armR.scale.x = Math.abs(P.armR.scale.x) * (flip ? -1 : 1);
-  if (attackT > 0) {
-    const t = attackT;
-    const k = t * 2.4 - 1.2;
-    P.armR.rotation = a + (flip ? -1 : 1) * k * 1.5;
-    P.armR.position.y = -90 - Math.sin(t * Math.PI) * 8;
-    P.torso.rotation = (flip ? -1 : 1) * (t - 0.45) * 0.3;
-    P.torso.position.y = -41 - Math.sin(t * Math.PI) * 1.6;
-  } else {
-    const lift = Math.sin(walkT * 1.7) * 0.06;
-    P.armR.rotation = 0.7 + lift;
-    P.armR.position.y = -90;
-    P.torso.rotation = 0;
-    P.torso.position.y = -41;
-  }
-
-  const flash = hitT > 0 ? Math.min(1, hitT * 8) : 0;
-  const tint = flash > 0 ? 0xffb0a0 : 0xffffff;
-  P.head.tint = tint; P.torso.tint = tint; P.legs.tint = tint;
 }
 
 export function createCharSprite(char: CharDef): CharSprite {
@@ -314,6 +292,59 @@ function drawEars(earL: Graphics, earR: Graphics, char: CharDef) {
     earL.ellipse(-8.5, -39, 1.6, 5).fill(0x6b7f96);
     earR.ellipse(8.5, -39, 1.6, 5).fill(0x6b7f96);
   }
+}
+
+
+/** 部位拼合角色动画（走路/待机/挥砍/受击/死亡） */
+function poseParts(s: CharSprite, walkT: number, moving: boolean, aimAng: number,
+  hitT: number, sprint: boolean, attackT = 0, dead = false) {
+  const P = s.parts!;
+  if (dead) {
+    s.c.rotation = Math.PI / 2 + 0.22;
+    s.c.position.y = 4;
+    s.c.alpha = 0.95;
+    return;
+  }
+  s.c.rotation = 0; s.c.alpha = 1;
+  const freq = sprint ? 14 : 9.5;
+  const sw = moving ? Math.sin(walkT * freq) : 0;
+  const bob = moving ? Math.abs(Math.sin(walkT * freq)) * 2.4 : Math.sin(walkT * 1.5) * 0.9;
+  s.c.position.y = -bob;
+
+  const flip = Math.cos(aimAng) < -0.1;
+  const a = flip ? Math.PI - aimAng : aimAng;
+  P.aim = a;
+
+  P.head.scale.x = Math.abs(P.head.scale.x) * (flip ? -1 : 1);
+  P.head.rotation = sw * 0.05 + Math.sin(walkT * 0.8) * 0.02;
+
+  P.legs.rotation = sw * 0.16;
+
+  P.tail.rotation = Math.sin(walkT * (moving ? 7 : 2.6)) * (moving ? 0.3 : 0.16);
+
+  P.armR.scale.x = Math.abs(P.armR.scale.x) * (flip ? -1 : 1);
+  const dir = flip ? -1 : 1;
+  const handX = P.armR.position.x + dir * P.armR.width * 0.42;
+  const handY = P.armR.position.y + P.armR.height * 0.45;
+  s.weapon.visible = true;
+  s.weapon.position.set(handX, handY);
+  if (attackT > 0) {
+    const t = attackT;
+    const k = t * 2.4 - 1.2;                 // -1.2 → +1.2
+    P.armR.rotation = a + dir * k * 1.5;
+    P.torso.rotation = dir * (t - 0.45) * 0.3;
+    s.weapon.rotation = a + dir * k * 1.8;
+    if (t > 0.8) s.weapon.y += (t - 0.8) * 42;   // 收势回弹
+  } else {
+    const lift = Math.sin(walkT * 1.7) * 0.06;
+    P.armR.rotation = 0.7 + lift;
+    P.torso.rotation = 0;
+    s.weapon.rotation = a + dir * 1.05;       // 斜握待机
+  }
+
+  const flash = hitT > 0 ? Math.min(1, hitT * 8) : 0;
+  const tint = flash > 0 ? 0xffb0a0 : 0xffffff;
+  P.head.tint = tint; P.torso.tint = tint; P.legs.tint = tint;
 }
 
 /** 角色姿势动画（walkT 行走相位 / aim 瞄准角 / attack 0..1 挥砍 / hitT 受击 / dead） */

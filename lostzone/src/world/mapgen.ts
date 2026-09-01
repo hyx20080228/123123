@@ -395,71 +395,57 @@ export function generateWorld(): World {
       r: tree ? 14 : 9, solid: tree, zone: Z.NONE });
   }
 
-  // ================= 刷新机制 v3：散布 + 自动合法化 =================
-  // 规则：微抖动打散"成排"摆放；落点必须 非墙 / 距地图边>=6格 / 距所在区域北边及其他边>=2格 / 不压道具
-  const spread = (x: number, y: number) => {
-    let ox = 0, oy = 0;
-    const h = (x * 131 + y * 197) % 1000 / 1000;
-    ox = Math.floor(h * 5) - 2;
-    oy = Math.floor(((x * 73 + y * 11) % 1000) / 1000 * 5) - 2;
-    return [x + ox, y + oy] as [number, number];
+  // ================= 刷新机制 v4：区域席位散布（真正打散，不贴边不成排） =================
+  // 每个区域的资源物品席位按区域大小均匀铺开（确定性哈希洗牌+等距抽样，可复现）。
+  // 落点满足：非墙 / 非荒野 / 不在门上 / 不压道具 / 距地图边>=8格 / 距区域边>=3格 / 距地图顶带>=12格。
+  const KEY_ITEMS = new Set(['note1','note2','note3','note4','note5','log1','log2','photo1',
+    'tape','powercell','p9','vest','smg','antir']);
+  const doorCells = new Set(Object.values(doors).map(d => d.ty * W + d.tx));
+  const h32 = (x: number, y: number, z: number) => {
+    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(z + 7, 2246822519);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return (h ^ (h >>> 16)) >>> 0;
   };
-  const legal = (x: number, y: number, zone: number) => {
-    if (x < 6 || y < 6 || x >= W - 6 || y >= H - 6) return false;
-    if (zone === Z.NONE) return false;              // 荒野不放物品
-    if (isSolidTile(gget(grid, x, y))) return false; // 不嵌墙
-    // 距区域各边 >= 2 格（消除"贴最上边"观感）
-    let up = 0; for (let yy = y; yy >= 0 && zget(x, yy) === zone; yy--) up++;
-    let down = 0; for (let yy = y; yy < H && zget(x, yy) === zone; yy++) down++;
-    let left = 0; for (let xx = x; xx >= 0 && zget(xx, y) === zone; xx--) left++;
-    let right = 0; for (let xx = x; xx < W && zget(xx, y) === zone; xx++) right++;
-    if (up < 2 || down < 2 || left < 2 || right < 2) return false;
-    // 不压道具
+  const seatOK = (x: number, y: number, z: number) => {
+    if (x < 8 || y < 12 || x >= W - 8 || y >= H - 8) return false;   // 全局留边 + 顶部留带
+    if (zoneId[y * W + x] !== z || doorCells.has(y * W + x)) return false;
+    if (isSolidTile(gget(grid, x, y))) return false;
+    // 至少一侧可通行，不落死角
+    const open = !isSolidTile(gget(grid, x + 1, y)) || !isSolidTile(gget(grid, x - 1, y)) ||
+      !isSolidTile(gget(grid, x, y + 1)) || !isSolidTile(gget(grid, x, y - 1));
+    if (!open) return false;
     for (const pr of props) {
       if (!pr.solid) continue;
       const d = Math.hypot(x * TILE + 16 - pr.x, y * TILE + 16 - pr.y);
-      if (d < pr.r + 12) return false;
+      if (d < pr.r + 10) return false;
     }
     return true;
   };
-  const snap = (x0: number, y0: number, zone: number): [number, number] | null => {
-    for (let r = 1; r <= 14; r++) {
-      for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) {
-        if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-        const x = x0 + dx, y = y0 + dy;
-        if (legal(x, y, zone)) return [x, y];
-      }
+  const seats = new Map<number, [number, number][]>();
+  const seatOf = (z: number) => {
+    let arr = seats.get(z);
+    if (!arr) {
+      arr = [];
+      for (let y = 2; y < H - 2; y++) for (let x = 2; x < W - 2; x++)
+        if (seatOK(x, y, z)) arr.push([x, y]);
+      arr.sort((a, b) => h32(a[0], a[1], z) - h32(b[0], b[1], z));  // 确定性洗牌
+      seats.set(z, arr);
     }
-    return null;
+    return arr;
   };
-  const repair = (list: { x: number; y: number; zone: number }[]) => {
-    let moved = 0;
-    for (const p of list) {
-      const x0 = Math.floor(p.x / TILE), y0 = Math.floor(p.y / TILE);
-      const z = p.zone;
-      if (legal(x0, y0, z)) continue;
-      const n = snap(x0, y0, z);
-      if (n) { p.x = n[0] * TILE + 16; p.y = n[1] * TILE + 16; moved++; continue; }
-      // snap 失败：微抖后重试
-      const [sx2, sy2] = spread(x0, y0);
-      const n2 = snap(sx2, sy2, z);
-      if (n2) { p.x = n2[0] * TILE + 16; p.y = n2[1] * TILE + 16; moved++; }
-    }
-    return moved;
-  };
-  // 关键剧情物品豁免：任务链坐标固定不变
-  const KEY_ITEMS = new Set(['note1','note2','note3','note4','note5','log1','log2','photo1',
-    'tape','powercell','p9','vest','smg','antir']);
-  // 打散成排物品（资源类错落摆放）
-  for (let i = 0; i < pickups.length; i++) {
-    const p = pickups[i];
-    if (KEY_ITEMS.has(p.item)) continue;
-    const x0 = Math.floor(p.x / TILE), y0 = Math.floor(p.y / TILE);
-    const [sx3, sy3] = spread(x0, y0);
-    if (legal(sx3, sy3, p.zone)) { p.x = sx3 * TILE + 16; p.y = sy3 * TILE + 16; }
+  const nonKeyCount = new Map<number, number>();
+  for (const p of pickups) if (!KEY_ITEMS.has(p.item))
+    nonKeyCount.set(p.zone, (nonKeyCount.get(p.zone) ?? 0) + 1);
+  const usedSeat = new Map<number, number>();
+  for (const p of pickups) {
+    if (KEY_ITEMS.has(p.item)) continue;                 // 剧情物品固定
+    const arr = seatOf(p.zone), n = arr.length, k = nonKeyCount.get(p.zone) ?? 1;
+    if (!n) continue;
+    const stride = Math.max(1, Math.floor(n / k));
+    const idx = ((usedSeat.get(p.zone) ?? 0) * stride + Math.floor(stride / 2)) % n;
+    usedSeat.set(p.zone, (usedSeat.get(p.zone) ?? 0) + 1);
+    p.x = arr[idx][0] * TILE + 16; p.y = arr[idx][1] * TILE + 16;
   }
-  repair(pickups.filter(p => !KEY_ITEMS.has(p.item)));
-  repair(enemies.map(e => ({ x: e.x, y: e.y, zone: e.zone })) as any);
 
   // ---------- 关键坐标 ----------
   const clock = { x: 48.5 * TILE, y: 40 * TILE };

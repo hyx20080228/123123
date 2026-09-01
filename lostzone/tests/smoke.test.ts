@@ -104,6 +104,25 @@ describe('旧城区地图', () => {
       b.props.map(p => `${p.kind}:${p.x},${p.y}`).join('|'));
   });
 
+  test('资源物品分布：整图不扎堆、不贴顶带、区域内纵向有跨度', () => {
+    const w = generateWorld();
+    const byZone = new Map<number, number[]>();
+    for (const p of w.pickups) {
+      const z = w.zoneId[Math.floor(p.y / 32) * 96 + Math.floor(p.x / 32)];
+      byZone.set(z, [...(byZone.get(z) ?? []), Math.floor(p.y / 32)]);
+    }
+    let resCount = 0;
+    for (const [z, ys] of byZone) {
+      if (z === Z.NONE) continue;
+      resCount += ys.length;
+      if (ys.length >= 3) {
+        const span = Math.max(...ys) - Math.min(...ys);
+        expect(span, `区域 ${z} 物品 y 跨度 ${span} 过小，仍扎堆`).toBeGreaterThanOrEqual(5);
+      }
+    }
+    expect(resCount).toBeGreaterThan(30);
+  });
+
   test('物品刷新合法：不贴地图边、不贴区域边、不入墙不压道具', () => {
     const w = generateWorld();
     for (const p of w.pickups) {
