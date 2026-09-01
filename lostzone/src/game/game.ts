@@ -1,8 +1,8 @@
 // ============ 对局逻辑：玩家 / 锈犬 / 战斗 / 搜刮 / 撤离 / 叙事 ============
 import { Application, Container, Graphics } from 'pixi.js';
-import { World, T, Z, TILE, ZONES, isSolidTile, PickupDef } from '../world/mapgen';
+import { World, T, Z, TILE, W, H, ZONES, isSolidTile, PickupDef } from '../world/mapgen';
 import { gget, bfsWalkable, bfsNext, raycastGrid, clamp, lerp, angLerp, TAU, dist2 } from '../core/util';
-import { ITEMS, LORE, SaveData, CharDef } from '../core/defs';
+import { ITEMS, LORE, SaveData, CharDef, Settings, DEFAULT_SETTINGS } from '../core/defs';
 import { newRun, RunState, addSlot, addBag, bagCount, autoLoadout, storeSave } from './state';
 import { RendererCtx } from '../render/renderer';
 import { createCharSprite, poseChar, CharSprite, createHoundSprite, poseHound, HoundSprite,
@@ -27,6 +27,8 @@ export interface HudApi {
   hudTick(state: RunState, save: SaveData): void;
   refreshPickups?(): void;
   closeAll(): void;
+  openMenu(onResume: () => void, onExit: () => void, onSettings: (k: string, v: number | boolean) => void): void;
+  flashMenuButton(): void;
 }
 
 interface PickupEnt { def: PickupDef; sprite: PickupSprite; taken: boolean; t: number }
@@ -37,11 +39,12 @@ interface EnemyEnt {
   patrol: { x: number; y: number }[]; pi: number; alert: number;
   t: number; actT: number; cool: number; repath: number; path: Int32Array | null; pathT: number;
   hitT: number; sprite: HoundSprite; zone: number; barkT: number; telegraph: Graphics; eliteGlow: Graphics;
+  wanderT: number; wx: number; wy: number; waitT: number;
 }
 interface LightPulse { x: number; y: number; r: number; a: number; ttl: number }
 
 export class Game {
-  app: Application; world: World; rc: RendererCtx; save: SaveData; char: CharDef;
+  app: Application; world: World; rc: RendererCtx; save: SaveData; char: CharDef; settings: Settings;
   st: RunState; hud: HudApi;
   private particles = new Particles();
   // 玩家
@@ -73,10 +76,11 @@ export class Game {
   private unlocked = new Set<string>();
   private looted = new Set<string>();
 
-  constructor(app: Application, world: World, save: SaveData, char: CharDef, hud: HudApi) {
-    this.app = app; this.world = world; this.save = save; this.char = char; this.hud = hud;
+  constructor(app: Application, world: World, save: SaveData, char: CharDef, hud: HudApi,
+    settings: Settings = DEFAULT_SETTINGS) {
+    this.app = app; this.world = world; this.save = save; this.char = char; this.hud = hud; this.settings = settings;
     this.st = newRun(save.upgrades, char.id, autoLoadout(save));
-    this.rc = new RendererCtx(app, world);
+    this.rc = new RendererCtx(app, world, settings);
     this.rc.objLayer.addChild(this.particles.c);
     this.px = world.spawn.x; this.py = world.spawn.y;
     this.pSprite = createCharSprite(char);
@@ -135,6 +139,7 @@ export class Game {
         pi: 0, alert: 0, t: Math.random() * 10, actT: 0, cool: 0, repath: 0, path: null, pathT: 0,
         hitT: 0, sprite, zone: e.zone, barkT: 0, telegraph,
         eliteGlow: e.elite ? glow : glow,
+        wanderT: 0, wx: e.x, wy: e.y, waitT: 0,
       });
     }
     this.beacon.c.position.set(w.extraction.x, w.extraction.y);
@@ -225,7 +230,8 @@ export class Game {
     // 准星
     const s = this.rc.worldToScreen(this.px, this.py);
     this.aim = Math.atan2(this.mouse.y - s.y, this.mouse.x - s.x);
-    poseChar(this.pSprite, this.walkT, this.moving, this.aim, this.hitT, this.sprint);
+    poseChar(this.pSprite, this.walkT, this.moving, this.aim, this.hitT, this.sprint,
+      this.meleeT > 0 ? 1 - this.meleeT / 0.22 : 0, this.dead);
     this.pSprite.c.position.set(this.px, this.py);
     this.pSprite.c.zIndex = this.py;
     // 武器姿态
@@ -312,7 +318,8 @@ export class Game {
     if (!slot || this.reloadT > 0 || this.meleeT > 0) return;
     const def = ITEMS[slot.item];
     if (def.kind === 'melee') {
-      if (this.mouse.down && this.fireT <= 0) {
+      if ((this.mouse.down || this.justClicked) && this.fireT <= 0) {
+        this.justClicked = false;
         this.fireT = 1 / def.rate!;
         this.meleeT = 0.22;
         this.meleeAttack(def.dmg!, def.range!, def.meleeArc!);
@@ -338,6 +345,7 @@ export class Game {
     }
   }
   private justClicked = false;
+  private dead = false;
   private meleeAttack(dmg: number, range: number, arc: number) {
     let hit = false;
     for (const e of this.enemies) {
@@ -354,7 +362,8 @@ export class Game {
         e.y = this.py + Math.sin(ang) * (d + kb);
       }
     }
-    this.particles.spawn(this.px + Math.cos(this.aim) * 34, this.py + Math.sin(this.aim) * 20, { n: hit ? 8 : 4, color: 0xffffff, speed: 160, life: .25, size: 2.4, grav: 60 });
+    this.particles.spawn(this.px + Math.cos(this.aim) * 34, this.py + Math.sin(this.aim) * 20, { n: hit ? 12 : 6, color: 0xffffff, speed: 190, life: .28, size: 2.6, grav: 60, ang: this.aim, spread: 0.9 });
+    this.rc.addShake(hit ? 0.16 : 0.06);
     if (hit) sfx.hit();
   }
   private gunMult() { return 1 + (this.save.upgrades.guns || 0) * 0.15; }
@@ -399,6 +408,7 @@ export class Game {
   }
   private killEnemy(e: EnemyEnt) {
     e.state = 'dead'; e.actT = 0;
+    if (this.settings.shake) this.rc.addShake(0.22);
     sfx.dogDie();
     this.particles.spawn(e.x, e.y, { n: 14, color: 0xffa04a, speed: 220, life: .5, size: 3, grav: 340 });
     this.particles.spawn(e.x, e.y, { n: 6, color: 0x9aa4ac, speed: 130, life: .4, size: 2.4, grav: 300 });
@@ -427,7 +437,7 @@ export class Game {
   // ---------- 锈犬 AI ----------
   private updateEnemies(dt: number) {
     for (const e of this.enemies) {
-      if (e.state === 'dead') { poseHound(e.sprite, e.t, false, 0, true); continue; }
+      if (e.state === 'dead') { poseHound(e.sprite, e.t, false, 0, true); e.sprite.c.position.set(e.x, e.y); continue; }
       e.t += dt;
       e.hitT = Math.max(0, e.hitT - dt);
       e.cool = Math.max(0, e.cool - dt);
@@ -451,8 +461,8 @@ export class Game {
           break;
         }
       }
-      poseHound(e.sprite, e.t, e.state === 'patrol' || e.state === 'chase', e.alert, false);
-      e.sprite.body.tint = e.state === 'attack' && e.actT < 0.42 ? 0xffb098 : 0xffffff;
+      const atkPhase = e.state === 'attack' ? clamp(e.actT / 0.62, 0, 1) : -1;
+      poseHound(e.sprite, e.t, e.state === 'patrol' || e.state === 'chase', e.alert, false, atkPhase);
       e.sprite.c.position.set(e.x, e.y + Math.sin(e.t * 8) * (e.state === 'attack' ? 1.4 : 0));
       e.sprite.c.zIndex = e.y;
     }
@@ -471,14 +481,45 @@ export class Game {
     return true;
   }
 
+  /** 自由巡逻：在生成点周边随机游走（BFS 寻路 + 停留 + 换点） */
   private aiPatrol(e: EnemyEnt, dt: number) {
-    if (!e.patrol.length) { e.state = 'chase'; return; }
-    const tp = e.patrol[e.pi];
-    const d = Math.hypot(tp.x - e.x, tp.y - e.y);
-    if (d < 18) { e.pi = (e.pi + 1) % e.patrol.length; return; }
-    const nx = e.x + (tp.x - e.x) / d * e.speed * 0.7 * dt;
-    const ny = e.y + (tp.y - e.y) / d * e.speed * 0.7 * dt;
-    const [cx, cy] = this.moveCircleFor(e, nx, ny);
+    // 等待
+    if (e.waitT > 0) { e.waitT -= dt; return; }
+    const d = Math.hypot(e.wx - e.x, e.wy - e.y);
+    const tx = Math.floor(e.x / TILE), ty = Math.floor(e.y / TILE);
+    // 每 0.8s 重新寻路到当前漫游点
+    e.repath -= dt;
+    if (e.repath <= 0) {
+      e.repath = 0.8;
+      e.path = bfsWalkable(this.world.grid, (t) => !isSolidTile(t), tx, ty,
+        Math.floor(e.wx / TILE), Math.floor(e.wy / TILE));
+    }
+    if (d < 40) {
+      // 到达 → 停留并选新目标（区域中心附近的随机偏移）
+      e.waitT = 0.6 + Math.random() * 1.8;
+      const hx = Math.floor((e.patrol.length ? e.patrol[e.pi].x : e.x) / TILE);
+      const hy = Math.floor((e.patrol.length ? e.patrol[e.pi].y : e.y) / TILE);
+      if (e.patrol.length) e.pi = (e.pi + 1) % e.patrol.length;
+      const base = e.patrol.length ? [hx, hy] : [tx, ty];
+      for (let t2 = 0; t2 < 14; t2++) {
+        const nx = base[0] + Math.floor((Math.random() - 0.5) * 14);
+        const ny = base[1] + Math.floor((Math.random() - 0.5) * 14);
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        if (isSolidTile(gget(this.world.grid, nx, ny))) continue;
+        e.wx = nx * TILE + 16; e.wy = ny * TILE + 16; break;
+      }
+      return;
+    }
+    // 朝漫游点移动（优先 BFS 路径，近距直行）
+    let nx = e.wx, ny = e.wy;
+    if (e.path) {
+      const nxt = bfsNext(e.path, W, tx, ty, Math.floor(e.wx / TILE), Math.floor(e.wy / TILE));
+      if (nxt) { nx = nxt[0] * TILE + 16; ny = nxt[1] * TILE + 16; }
+    }
+    const dd = Math.hypot(nx - e.x, ny - e.y) || 1;
+    const mx = e.x + clamp((nx - e.x) / dd, -1, 1) * e.speed * 0.75 * dt;
+    const my = e.y + clamp((ny - e.y) / dd, -1, 1) * e.speed * 0.75 * dt;
+    const [cx, cy] = this.moveCircleFor(e, mx, my);
     e.x = cx; e.y = cy;
   }
 
@@ -493,7 +534,9 @@ export class Game {
     if (d2p < 54 * 54 && sees && e.cool <= 0) {
       e.state = 'attack'; e.actT = 0; return;
     }
-    if (!sees && e.alert <= 0) { e.state = 'patrol'; return; }
+    if (!sees && e.alert <= 0 || Math.sqrt(d2p) > 700) {
+      e.state = 'patrol'; e.repath = 0; e.path = null; e.wx = e.x; e.wy = e.y; return;
+    }
     let nx = this.px, ny = this.py;
     if (e.path) {
       const nxt = bfsNext(e.path, 96, ex, ey, tx, ty);
@@ -545,7 +588,7 @@ export class Game {
     this.hitT = 0.2; this.hurtFlash = 0.35;
     sfx.hurt();
     sfx.dog();
-    this.rc.addShake(0.4);
+    if (this.settings.shake) this.rc.addShake(0.4);
     const ang = from ? Math.atan2(this.py - from.y, this.px - from.x) : Math.PI;
     this.particles.spawn(this.px, this.py, { n: 8, color: 0xff6a5a, speed: 180, life: .4, size: 3, grav: 240, ang });
     if (this.extractT !== null) { this.extractT = null; this.hud.extract(null); this.hud.toast('撤离被打断！', 'bad'); }
@@ -813,6 +856,7 @@ export class Game {
   }
   private die() {
     this.done = true;
+    this.dead = true;
     this.save.runs++; this.save.deaths++;
     sfx.roar();
     let salvage = 0;
@@ -860,6 +904,7 @@ export class Game {
           x, y, hp: 90, maxHp: 90, r: 13, elite: false, speed: 150, state: 'chase',
           patrol: [], pi: 0, alert: 6, t: 0, actT: 0, cool: 0, repath: 0, path: null, pathT: 0,
           hitT: 0, sprite, zone: Z.CEN, barkT: 1, telegraph: new Graphics(), eliteGlow: new Graphics(),
+          wanderT: 0, wx: x, wy: y, waitT: 0,
         });
       }
       this.alarmNearby(this.px, this.py, 999);
@@ -909,6 +954,25 @@ export class Game {
       if (t.ttl <= 0) { this.tracer.splice(i, 1); continue; }
       g.moveTo(t.x0, t.y0).lineTo(t.x1, t.y1).stroke({ width: 2.2, color: 0xffd98a, alpha: t.ttl / 0.09 * 0.9 });
     }
+    // 挥砍弧光
+    if (this.meleeT > 0) {
+      const k = 1 - this.meleeT / 0.22;
+      const a0 = this.aim - 1.1 + k * 2.2;
+      const R = 62;
+      const seg = 12;
+      g.moveTo(this.px + Math.cos(a0) * R, this.py + Math.sin(a0) * R);
+      for (let i = 1; i <= seg; i++) {
+        const a = a0 + (2.2 * i) / seg;
+        g.lineTo(this.px + Math.cos(a) * R, this.py + Math.sin(a) * R);
+      }
+      g.stroke({ width: 6 - k * 3, color: 0xfff0d0, alpha: (1 - k) * 0.85 });
+      g.moveTo(this.px + Math.cos(a0) * R * 0.6, this.py + Math.sin(a0) * R * 0.6);
+      for (let i = 1; i <= seg; i++) {
+        const a = a0 + (2.2 * i) / seg;
+        g.lineTo(this.px + Math.cos(a) * R * 0.6, this.py + Math.sin(a) * R * 0.6);
+      }
+      g.stroke({ width: 10 - k * 5, color: 0xffffff, alpha: (1 - k) * 0.35 });
+    }
     this.tracersG.zIndex = 30;
     if (!this.tracersG.parent) this.rc.objLayer.addChild(this.tracersG);
   }
@@ -951,9 +1015,28 @@ export class Game {
   private togglePause() {
     if (this.done) return;
     if (this.paused) { this.hud.closeAll(); this.paused = false; this.invOpen = false; return; }
-    this.paused = true;
-    this.hud.openPause(() => { this.paused = false; }, () => { location.reload(); });
+    this.openMenu();
   }
+  /** 顶部菜单按钮 */
+  openMenu() {
+    if (this.done || this.paused) return;
+    this.paused = true;
+    this.hud.openMenu(
+      () => { this.paused = false; },
+      () => { location.reload(); },
+      (k, v) => this.applySetting(k, v),
+    );
+  }
+  private applySetting(k: string, v: number | boolean) {
+    if (k === 'lightFx') { this.settings.lightFx = !!v; }
+    if (k === 'shake') this.settings.shake = !!v;
+    if (k === 'volume') { this.settings.volume = v as number; sfx.setVolume(v as number); }
+  }
+  /** 供 HUD 点击菜单 */
+  menuButton() { this.openMenu(); }
+  setDead() { this.dead = true; }
+  // 死亡姿势
+  private die2() {}
   private useSlot(i: number) {
     const s = this.st.slots[i];
     if (!s) return;

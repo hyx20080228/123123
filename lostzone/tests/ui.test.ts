@@ -83,6 +83,33 @@ describe('UI 层', () => {
     expect(html).toContain('一张被压皱的便条');
   });
 
+  test('菜单栏：openMenu 四入口 + 设置联动 + flashMenuButton', () => {
+    const ui: any = new Ui(structuredClone(DEFAULT_SAVE), () => {});
+    const app = { renderer: { width: 100, height: 100 }, screen: { width: 1280, height: 720 }, stage: {} };
+    ui.buildHud(app, generateWorld() as World);
+    ui.flashMenuButton();
+    expect(document.querySelector('#hud-menu')).toBeTruthy();
+    expect(document.querySelector('#hud-menu')!.getAttribute('style')).toContain('menuPulse');
+    let resumed = false, exited = false, setting: any = null;
+    ui.openMenu(() => { resumed = true; }, () => { exited = true; }, (k: string, v: any) => { setting = [k, v]; });
+    expect(document.querySelector('#pause')).toBeTruthy();
+    expect(document.querySelector('#p-help')).toBeTruthy();
+    expect(document.querySelector('#p-lore')).toBeTruthy();
+    expect(document.querySelector('#p-settings')).toBeTruthy();
+    expect(document.querySelector('#p-exit')).toBeTruthy();
+    (document.querySelector('#p-res') as HTMLElement).click();
+    expect(resumed).toBe(true);
+    expect(document.querySelector('#pause')).toBeNull();
+    ui.openMenu(() => {}, () => { exited = true; }, (k: string, v: any) => { setting = [k, v]; });
+    (document.querySelector('#p-settings') as HTMLElement).click();
+    expect(document.querySelector('#settings')).toBeTruthy();
+    const vol = document.querySelector('#set-vol') as HTMLInputElement;
+    vol.value = '0.5';
+    vol.dispatchEvent(new Event('input'));
+    expect(setting).toEqual(['volume', 0.5]);
+    expect(ui.settings.volume).toBe(0.5);
+  });
+
   test('HUD 构建与背包弹窗', () => {
     const ui: any = new Ui(structuredClone(DEFAULT_SAVE), () => {});
     const app = { renderer: { width: 100, height: 100 }, screen: { width: 1280, height: 720 }, stage: {} };

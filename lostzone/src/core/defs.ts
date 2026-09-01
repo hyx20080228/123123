@@ -8,26 +8,24 @@ export interface ItemDef {
   id: string;
   name: string;
   kind: ItemKind;
-  icon: string;          // emoji 图标（临时，后续换程序化图标）
-  color: string;         // 主题色（发光描边）
+  icon: string;
+  color: string;         // 发光描边色
   desc: string;
-  value: number;         // 旧币价值
-  stack: number;         // 单格最大堆叠
+  value: number;
+  stack: number;
   // 武器
   dmg?: number;
-  rate?: number;         // 发/秒
-  range?: number;        // px
+  rate?: number;
+  range?: number;
   mag?: number;
-  spread?: number;       // 弧度
-  speed?: number;        // 弹速(射线=false)
+  spread?: number;
+  speed?: number;
   auto?: boolean;
-  meleeArc?: number;     // 近战扇形弧度
+  meleeArc?: number;
   reload?: number;
-  // 护甲
+  // 护甲 / 消耗
   armorVal?: number;
-  // 消耗品
   heal?: number;
-  // 稀有资源
   isRare?: boolean;
   isQuest?: boolean;
 }
@@ -35,11 +33,11 @@ export interface ItemDef {
 export const ITEMS: Record<string, ItemDef> = {
   // ---- 武器 ----
   cleaver: { id:'cleaver', name:'砍肉刀', kind:'melee', icon:'🔪', color:'#ff4fa0',
-    desc:'居民区杂货铺的旧砍刀。挥砍时发出让人安心的风声。', value:30, stack:1, dmg:62, rate:2.2, range:74, meleeArc:1.5 },
+    desc:'居民区杂货铺的旧砍刀。挥砍时发出让人安心的风声。', value:30, stack:1, dmg:66, rate:2.4, range:80, meleeArc:1.6 },
   p9: { id:'p9', name:'P9 手枪', kind:'gun', icon:'🔫', color:'#ff4a3c',
-    desc:'老式警用手枪，稳定可靠。', value:120, stack:1, dmg:24, rate:4.5, range:620, mag:12, speed:1400, spread:0.035, reload:1.1 },
+    desc:'老式警用手枪，稳定可靠。', value:120, stack:1, dmg:26, rate:5, range:640, mag:12, spread:0.03, reload:1.0 },
   smg: { id:'smg', name:'拾荒者冲锋枪', kind:'gun', icon:'⚡', color:'#ff4a3c',
-    desc:'仓库里拼出来的自动武器，射速惊人但准头堪忧。', value:240, stack:1, dmg:14, rate:9, range:520, mag:30, speed:1300, spread:0.09, auto:true, reload:1.5 },
+    desc:'仓库里拼出来的自动武器，射速惊人但准头堪忧。', value:240, stack:1, dmg:15, rate:10, range:540, mag:30, spread:0.085, auto:true, reload:1.4 },
   // ---- 护甲 ----
   vest: { id:'vest', name:'塑料拼甲', kind:'armor', icon:'🛡️', color:'#3fa9ff',
     desc:'三层自行车内胎压制的护甲，挡不住子弹但能少挨几下。', value:90, stack:1, armorVal:40 },
@@ -73,7 +71,7 @@ export const ITEMS: Record<string, ItemDef> = {
   log1:  { id:'log1', name:'日志 · 封锁日志', kind:'lore', icon:'📔', color:'#b26bff', desc:'市立二院封锁日志。', value:0, stack:1 },
   log2:  { id:'log2', name:'日志 · 末班车', kind:'lore', icon:'📔', color:'#b26bff', desc:'地铁运营日志。', value:0, stack:1 },
   photo1:{ id:'photo1', name:'照片 · 全家福', kind:'lore', icon:'🖼️', color:'#b26bff', desc:'一家三口的旧照片。', value:0, stack:1 },
-  // ---- 钥匙/密码类（交互道具） ----
+  // ---- 钥匙类 ----
   flowerkey: { id:'flowerkey', name:'花盆下的钥匙', kind:'quest', icon:'🗝️', color:'#59e6d9',
     desc:'锈迹斑斑的抽屉钥匙，医院护士站抽屉上用。', value:0, stack:1, isQuest:true },
   pharmacykey: { id:'pharmacykey', name:'药房钥匙', kind:'quest', icon:'🗝️', color:'#59e6d9',
@@ -121,21 +119,30 @@ export const LORE: Record<string, LoreNote> = {
     hint:'—— 世界碎片 · 已收藏' },
 };
 
-// --------- 角色 ---------
-export interface CharDef { id:string; name:string; species:string; body:string; belly:string; ear:string; accent:string; desc:string; }
+// --------- 角色（含吃鸡风属性 / 动态预览用） ---------
+export interface CharStats { hp:number; speed:number; armor:number; stealth:number; skill:string }
+export interface CharDef { id:string; name:string; species:string; role:string; body:string; belly:string; ear:string; accent:string; desc:string; stats:CharStats }
 export const CHARS: CharDef[] = [
-  { id:'cat', name:'阿橘', species:'橘猫', body:'#e8923c', belly:'#f8d9a8', ear:'#c96f2a', accent:'#5c4a35',
-    desc:'杂货铺的猫。镇上第一个听见钟楼声音的人。' },
-  { id:'rabbit', name:'小白', species:'垂耳兔', body:'#cdd6e4', belly:'#f2f4fa', ear:'#b9c4d8', accent:'#c23b3b',
-    desc:'红围巾是「十四日」当晚唯一的未解线索，她却不记得任何事。' },
-  { id:'raccoon', name:'老浣', species:'浣熊', body:'#8a7a68', belly:'#e6ded2', ear:'#6d5f50', accent:'#3f6b5c',
-    desc:'旧城水管工，知道所有地下通道——包括不该存在的。' },
-  { id:'fowl', name:'灰鸮', species:'狐鸮', body:'#9fb3c9', belly:'#dce8f2', ear:'#7e93ac', accent:'#2f4c78',
-    desc:'事件前最后一卷胶卷，还在他相机里。' },
+  { id:'cat', name:'阿橘', species:'橘猫', role:'突击',
+    body:'#ef9c3f', belly:'#f8ddb0', ear:'#c96f2a', accent:'#5c4a35',
+    desc:'杂货铺的猫。镇上第一个听见钟楼声音的人。',
+    stats:{ hp:110, speed:105, armor:60, stealth:50, skill:'近战挥砍更宽、受击硬直更短' } },
+  { id:'rabbit', name:'小白', species:'垂耳兔', role:'侦察',
+    body:'#ccd6e6', belly:'#f2f4fa', ear:'#b6c2d8', accent:'#c23b3b',
+    desc:'红围巾是「十四日」当晚唯一的未解线索，她却不记得任何事。',
+    stats:{ hp:95, speed:118, armor:50, stealth:80, skill:'移动更快、奔跑无声（更难被听见）' } },
+  { id:'raccoon', name:'老浣', species:'浣熊', role:'工程',
+    body:'#8d7d6a', belly:'#e8e0d4', ear:'#6d5f50', accent:'#3f6b5c',
+    desc:'旧城水管工，知道所有地下通道——包括不该存在的。',
+    stats:{ hp:100, speed:100, armor:75, stealth:60, skill:'撬箱更高概率开出额外补给' } },
+  { id:'fowl', name:'灰鸮', species:'狐鸮', role:'射手',
+    body:'#9db3ca', belly:'#deeaf4', ear:'#7e93ac', accent:'#2f4c78',
+    desc:'事件前最后一卷胶卷，还在他相机里。',
+    stats:{ hp:90, speed:108, armor:45, stealth:70, skill:'枪械散布更小、后坐更稳' } },
 ];
 
 // --------- 升级 ---------
-export interface UpgradeDef { id:string; name:string; desc:string; max:number; costs:number[]; }
+export interface UpgradeDef { id:string; name:string; desc:string; max:number; costs:number[] }
 export const UPGRADES: UpgradeDef[] = [
   { id:'guns', name:'武器改装', desc:'全武器伤害 +15% / 级', max:3, costs:[200,500,1200] },
   { id:'armor', name:'护甲强化', desc:'出击护甲值 +20 / 级', max:3, costs:[150,400,1000] },
@@ -146,18 +153,22 @@ export interface SaveData {
   charId: string;
   gold: number;
   upgrades: Record<string, number>;
-  stash: Record<string, number>;      // 仓库（撤离保留的物品/资源）
-  lore: string[];                     // 已收集碎片 id
+  stash: Record<string, number>;
+  lore: string[];
   runs: number; extractions: number; deaths: number;
   seenTutorial: boolean;
-  radioDoorOpen: boolean;             // 「第五声」奖励：广播站后门
+  radioDoorOpen: boolean;
   bestTime: number;
+  seenIntro: boolean;
 }
 
 export const DEFAULT_SAVE: SaveData = {
   charId: 'cat', gold: 0, upgrades: { guns:0, armor:0, bag:0 }, stash: {},
-  lore: [], runs:0, extractions:0, deaths:0, seenTutorial:false, radioDoorOpen:false, bestTime:0,
+  lore: [], runs:0, extractions:0, deaths:0, seenTutorial:false, radioDoorOpen:false, bestTime:0, seenIntro:false,
 };
 
-// --------- 实用 ---------
+// --------- 设置 ---------
+export interface Settings { volume:number; shake:boolean; lightFx:boolean; quality:'低'|'中'|'高' }
+export const DEFAULT_SETTINGS: Settings = { volume: 0.6, shake: true, lightFx: true, quality: '高' };
+
 export function fmt(n: number): string { return n.toLocaleString('zh-CN'); }

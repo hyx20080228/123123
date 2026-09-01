@@ -72,10 +72,25 @@ describe('旧城区地图', () => {
       [48, 88, '撤离点'], [53, 41, '钟楼地窖'], [38, 19, '地下药房'],
       [64, 8, '广播站控制室'], [84, 30, 'B7集装箱'], [82, 70, '地铁储物间'],
       [41, 35, '点唱机'], [39, 9, '护士站抽屉'], [61, 63, '地铁售票厅'],
-      [17, 19, '花盆'], [13, 11, '纸条1'],
+      [17, 19, '花盆'], [14, 12, '纸条1'],
     ];
     for (const [tx, ty, name] of targets) {
       expect(reachable(w, sx, sy, tx, ty), `${name} 应可达`).toBe(true);
+    }
+  });
+
+  test('所有拾取物与交互点（门全开）均可达', () => {
+    const w = generateWorld();
+    openAllDoors(w);
+    const sx = Math.floor(w.spawn.x / 32), sy = Math.floor(w.spawn.y / 32);
+    const came = bfsWalkable(w.grid, (t) => !isSolidTile(t), sx, sy, 0, 0);
+    for (const p of w.pickups) {
+      const tx = Math.floor(p.x / 32), ty = Math.floor(p.y / 32);
+      expect(came[ty * 96 + tx], `拾取 ${p.item}@(${tx},${ty}) 应可达`).not.toBe(-1);
+    }
+    for (const i of w.interacts) {
+      const tx = Math.floor(i.x / 32), ty = Math.floor(i.y / 32);
+      expect(came[ty * 96 + tx], `交互 ${i.id}@(${tx},${ty}) 应可达`).not.toBe(-1);
     }
   });
 
@@ -111,7 +126,7 @@ describe('对局流程', () => {
 
   test('纸条1拾取 → 花盆解锁 → 护士站日志链', () => {
     const g: any = game;
-    g.px = 13 * 32; g.py = 11 * 32;
+    g.px = 14 * 32; g.py = 12 * 32;
     game.update(1 / 60);
     (game as any).tryInteract();
     expect(game.save.lore).toContain('note1');
@@ -130,7 +145,7 @@ describe('对局流程', () => {
 
   test('钟楼谜题 → 地窖开门 → 备用电源', () => {
     const g: any = game;
-    g.px = 48 * 32; g.py = 42 * 32;
+    g.px = 48.5 * 32; g.py = 43.5 * 32;
     game.update(1 / 60);
     (game as any).tryInteract();
     expect(store.puzzleCb).toBeTruthy();

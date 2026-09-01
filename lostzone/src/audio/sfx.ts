@@ -3,6 +3,8 @@ class Sfx {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   muted = false;
+  setVolume(v: number) { if (this.master) this.master.gain.value = v; }
+  setMuted(m: boolean) { this.muted = m; }
 
   ensure() {
     try {

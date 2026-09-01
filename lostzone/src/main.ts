@@ -47,6 +47,7 @@ async function boot() {
   document.getElementById('app')!.appendChild(app.canvas);
 
   const save = loadSave();
+  // app 传入 Ui：大厅底层为吃鸡风动态 Pixi 预览（黄昏城市剪影 + 角色立绘）
   const ui = new Ui(save, (charId) => {
     // 进入旧城区 —— 先隐藏大厅并显示遮罩，任何异常都可见
     try {
@@ -57,12 +58,13 @@ async function boot() {
       const world = generateWorld();
       ui.buildHud(app, world);
       ui.showHud(true);
-      const game = new Game(app, world, save, charById(charId), ui as any);
+      const game = new Game(app, world, save, charById(charId), ui as any, ui.settings);
       ui.hideLoading();
       ui.onSlotClick = (i: number) => {
         if (i === game['slotIdx']) { /* 已装备 */ }
         (game as any).equip(i);
       };
+      ui.onMenuClick = () => (game as any).menuButton();
       const tick = () => {
         const dt = Math.min(1 / 20, (app.ticker as any).deltaMS / 1000);
         game.update(dt);
@@ -78,7 +80,7 @@ async function boot() {
       console.error('[LostZone] 进入游戏失败:', err);
       ui.showError(err);
     }
-  });
+  }, app);
   window.addEventListener('pointerdown', () => { try { sfx.ensure(); } catch { /* ignore */ } }, { once: true });
 }
 

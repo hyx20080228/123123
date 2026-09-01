@@ -1,7 +1,8 @@
 // ============ 存档 & 对局状态 ============
-import { SaveData, DEFAULT_SAVE, ITEMS, CHARS, UPGRADES } from '../core/defs';
+import { SaveData, DEFAULT_SAVE, ITEMS, CHARS, UPGRADES, Settings, DEFAULT_SETTINGS } from '../core/defs';
 
 const KEY = 'lostzone.save.v1';
+const SET_KEY = 'lostzone.settings.v1';
 
 export function loadSave(): SaveData {
   try {
@@ -13,6 +14,17 @@ export function loadSave(): SaveData {
 }
 export function storeSave(s: SaveData) {
   try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
+
+export function loadSettings(): Settings {
+  try {
+    const raw = localStorage.getItem(SET_KEY);
+    if (!raw) return { ...DEFAULT_SETTINGS };
+    return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch { return { ...DEFAULT_SETTINGS }; }
+}
+export function storeSettings(s: Settings) {
+  try { localStorage.setItem(SET_KEY, JSON.stringify(s)); } catch { /* ignore */ }
 }
 
 // ---------- 对局背包 ----------
