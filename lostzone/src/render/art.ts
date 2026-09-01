@@ -23,6 +23,7 @@ export interface CharSprite {
   tail: Graphics; weapon: Container; pack: Graphics; scarf: Graphics;
   shadow: Graphics; weaponFx: Graphics;
   sheetSpr?: Sprite;
+  parts?: PartsRef;
 }
 
 // ---------- 测试贴图模式：外部角色贴图（2x2 表） ----------
@@ -58,7 +59,122 @@ function makeSheetChar(char: CharDef): CharSprite {
   return base;
 }
 
+
+// ---------- 部位拼合角色（3列x2行素材表：头/躯干/持械臂/腿/尾/背包） ----------
+export interface PartsRef {
+  head: Sprite; torso: Sprite; armR: Sprite; legs: Sprite; tail: Sprite; pack: Sprite;
+  aim: number;
+}
+let partsAssets: Partial<Record<string, Texture>> = {};
+export function setPartsAssets(m: Partial<Record<string, Texture>>) { partsAssets = m; }
+export function hasPartsAssets() { return Object.keys(partsAssets).length > 0; }
+
+function cellTex(tex: Texture, idx: number): Texture {
+  const tw = tex.width / 3, th = tex.height / 2;
+  return new Texture({ source: tex.source, frame: new Rectangle((idx % 3) * tw, Math.floor(idx / 3) * th, tw, th) });
+}
+
+function makePartsChar(char: CharDef, sheet: Texture): CharSprite {
+  const c = new Container();
+  c.sortableChildren = true;
+  const shadow = g().ellipse(0, 2, 19, 6).fill({ color: 0x000000, alpha: 0.3 });
+  shadow.zIndex = -2;
+
+  const fit = (tex: Texture, h: number) => {
+    const spr = new Sprite(tex);
+    spr.scale.set(h / tex.height);
+    return spr;
+  };
+  const legs = fit(cellTex(sheet, 3), 34);
+  const torso = fit(cellTex(sheet, 1), 44);
+  const head = fit(cellTex(sheet, 0), 38);
+  const armR = fit(cellTex(sheet, 2), 36);
+  const tail = fit(cellTex(sheet, 4), 26);
+  const pack = fit(cellTex(sheet, 5), 30);
+
+  legs.anchor.set(0.5, 1);
+  torso.anchor.set(0.5, 1);
+  head.anchor.set(0.5, 1);
+  tail.anchor.set(0.5, 1);
+  pack.anchor.set(0.5, 1);
+  armR.anchor.set(0.08, 0.1);
+  pack.scale.x *= 0.9;
+
+  legs.position.set(0, 0);
+  torso.position.set(0, -34);
+  head.position.set(0, -78);
+  pack.position.set(-3, -34);
+  tail.position.set(12, -42);
+  armR.position.set(13, -76);
+
+  legs.zIndex = 1; tail.zIndex = 1.2; pack.zIndex = 1.4; torso.zIndex = 2;
+  head.zIndex = 3; armR.zIndex = 4;
+
+  c.addChild(shadow, legs, tail, pack, torso, head, armR);
+  const empty = () => new Graphics();
+  const emptyC = () => new Container();
+  const base: CharSprite = {
+    c, char, body: empty(), head: empty(), earL: empty(), earR: empty(),
+    legL: empty(), legR: empty(), armL: empty(), armR: empty(),
+    tail: empty(), weapon: emptyC(), pack: empty(), scarf: empty(),
+    shadow, weaponFx: empty(),
+    parts: { head, torso, armR, legs, tail, pack, aim: 0 },
+  };
+  return base;
+}
+
+/** 部位拼合角色动画（走路/待机/挥砍/受击/死亡） */
+function poseParts(s: CharSprite, walkT: number, moving: boolean, aimAng: number,
+  hitT: number, sprint: boolean, attackT = 0, dead = false) {
+  const P = s.parts!;
+  if (dead) {
+    s.c.rotation = Math.PI / 2 + 0.22;
+    s.c.position.y = 4;
+    s.c.alpha = 0.95;
+    return;
+  }
+  s.c.rotation = 0; s.c.alpha = 1;
+  const freq = sprint ? 14 : 9.5;
+  const sw = moving ? Math.sin(walkT * freq) : 0;
+  const bob = moving ? Math.abs(Math.sin(walkT * freq)) * 2.4 : Math.sin(walkT * 1.5) * 0.9;
+  s.c.position.y = -bob;
+
+  const flip = Math.cos(aimAng) < -0.1;
+  const a = flip ? Math.PI - aimAng : aimAng;
+  P.aim = a;
+
+  P.head.scale.x = Math.abs(P.head.scale.x) * (flip ? -1 : 1);
+  P.head.rotation = sw * 0.05 + Math.sin(walkT * 0.8) * 0.02;
+
+  P.legs.rotation = sw * 0.16;
+  P.legs.scale.y = 1 - Math.abs(sw) * 0.05;
+
+  P.tail.rotation = Math.sin(walkT * (moving ? 7 : 2.6)) * (moving ? 0.3 : 0.16);
+
+  P.armR.scale.x = Math.abs(P.armR.scale.x) * (flip ? -1 : 1);
+  if (attackT > 0) {
+    const t = attackT;
+    const k = t * 2.4 - 1.2;
+    P.armR.rotation = a + (flip ? -1 : 1) * k * 1.5;
+    P.armR.position.y = -76 - Math.sin(t * Math.PI) * 8;
+    P.torso.rotation = (flip ? -1 : 1) * (t - 0.45) * 0.3;
+    P.torso.position.y = -34 - Math.sin(t * Math.PI) * 1.6;
+  } else {
+    const lift = Math.sin(walkT * 1.7) * 0.06;
+    P.armR.rotation = 0.7 + lift;
+    P.armR.position.y = -76;
+    P.torso.rotation = 0;
+    P.torso.position.y = -34;
+  }
+
+  const flash = hitT > 0 ? Math.min(1, hitT * 8) : 0;
+  const tint = flash > 0 ? 0xffb0a0 : 0xffffff;
+  P.head.tint = tint; P.torso.tint = tint; P.legs.tint = tint;
+}
+
 export function createCharSprite(char: CharDef): CharSprite {
+  const ptex = partsAssets[char.id];
+  if (ptex) return makePartsChar(char, ptex);
   if (charSheet) return makeSheetChar(char);
   const c = new Container();
   const shadow = g().ellipse(0, 22, 21, 8).fill({ color: 0x000000, alpha: 0.3 });
@@ -203,6 +319,7 @@ function drawEars(earL: Graphics, earR: Graphics, char: CharDef) {
 /** 角色姿势动画（walkT 行走相位 / aim 瞄准角 / attack 0..1 挥砍 / hitT 受击 / dead） */
 export function poseChar(s: CharSprite, walkT: number, moving: boolean, aimAng: number,
   hitT: number, sprint: boolean, attackT = 0, dead = false) {
+  if (s.parts) { poseParts(s, walkT, moving, aimAng, hitT, sprint, attackT, dead); return; }
   if (dead) {
     s.c.rotation = Math.PI / 2 + 0.28;
     s.c.y = 8;

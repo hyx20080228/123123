@@ -1,12 +1,15 @@
 // ============ 入口 ============
 import { Application, Assets, Texture } from 'pixi.js';
-import charSheetUrl from './assets/char-sheet.png';
+import partsCatUrl from './assets/parts-cat.png';
+import partsRabbitUrl from './assets/parts-rabbit.png';
+import partsRaccoonUrl from './assets/parts-raccoon.png';
+import partsFowlUrl from './assets/parts-fowl.png';
 import { generateWorld } from './world/mapgen';
 import { loadSave, storeSave, charById } from './game/state';
 import { Ui } from './ui/ui';
 import { Game } from './game/game';
 import { sfx } from './audio/sfx';
-import { setCharSheet } from './render/art';
+import { setPartsAssets } from './render/art';
 
 // 全局错误可见化：运行期任何异常都会显示错误面板
 function installGlobalErrorUi() {
@@ -48,11 +51,14 @@ async function boot() {
   });
   document.getElementById('app')!.appendChild(app.canvas);
 
-  // 角色测试贴图（2x2 素材表）——失败时自动回退到矢量角色
+  // 角色部位贴图（头/躯干/持械臂/腿/尾/背包 六格表）——失败时自动回退矢量角色
   try {
-    const sheet = await Assets.load<Texture>(charSheetUrl);
-    setCharSheet(sheet);
-  } catch (e) { console.warn('[LostZone] 贴图加载失败，使用矢量角色:', e); }
+    const [cat, rabbit, raccoon, fowl] = await Promise.all([
+      Assets.load<Texture>(partsCatUrl), Assets.load<Texture>(partsRabbitUrl),
+      Assets.load<Texture>(partsRaccoonUrl), Assets.load<Texture>(partsFowlUrl),
+    ]);
+    setPartsAssets({ cat, rabbit, raccoon, fowl });
+  } catch (e) { console.warn('[LostZone] 部位贴图加载失败，使用矢量角色:', e); }
 
   const save = loadSave();
   // app 传入 Ui：大厅底层为吃鸡风动态 Pixi 预览（黄昏城市剪影 + 角色立绘）

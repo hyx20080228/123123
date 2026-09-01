@@ -117,8 +117,9 @@ export class Game {
         ss.position.set(p.x + cx, p.y + cy);
         node = ss;
         c.destroy({ children: true });
-      } catch { /* 无渲染器（测试/回退）时保留 Graphics */ }
-      node.position.set(p.x, p.y);
+      } catch { /* 无渲染器（测试/回退）时保留 Graphics */
+        node.position.set(p.x, p.y);
+      }
       node.zIndex = p.y;
       this.rc.objLayer.addChild(node);
       this.propsC.push(node);

@@ -72,7 +72,7 @@ describe('旧城区地图', () => {
       [48, 88, '撤离点'], [53, 41, '钟楼地窖'], [38, 19, '地下药房'],
       [64, 8, '广播站控制室'], [84, 30, 'B7集装箱'], [82, 70, '地铁储物间'],
       [41, 35, '点唱机'], [39, 9, '护士站抽屉'], [61, 63, '地铁售票厅'],
-      [17, 19, '花盆'], [14, 12, '纸条1'],
+      [15, 18, '花盆'], [14, 12, '纸条1'],
     ];
     for (const [tx, ty, name] of targets) {
       expect(reachable(w, sx, sy, tx, ty), `${name} 应可达`).toBe(true);
@@ -102,6 +102,36 @@ describe('旧城区地图', () => {
       b.pickups.map(p => `${p.item}:${p.x},${p.y}`).join('|'));
     expect(a.props.map(p => `${p.kind}:${p.x},${p.y}`).join('|')).toBe(
       b.props.map(p => `${p.kind}:${p.x},${p.y}`).join('|'));
+  });
+
+  test('地图实体全合法：拾取/道具/敌人不入墙不压件、边界全封闭', () => {
+    const w = generateWorld();
+    for (const p of w.pickups) {
+      const tx = Math.floor(p.x / 32), ty = Math.floor(p.y / 32);
+      expect(isSolidTile(w.grid.cells[ty * 96 + tx]), `拾取 ${p.item} 不能在墙上`).toBe(false);
+      for (const prop of w.props) if (prop.solid) {
+        const d = Math.hypot(p.x - prop.x, p.y - prop.y);
+        expect(d, `拾取 ${p.item} 不能压进 ${prop.kind}`).toBeGreaterThanOrEqual(prop.r + 8);
+      }
+    }
+    for (const prop of w.props) if (prop.solid) {
+      const tx = Math.floor(prop.x / 32), ty = Math.floor(prop.y / 32);
+      expect(isSolidTile(w.grid.cells[ty * 96 + tx]), `道具 ${prop.kind} 不能嵌墙`).toBe(false);
+    }
+    for (const e of w.enemies) for (const pt of [{ x: e.x, y: e.y }, ...e.patrol]) {
+      const tx = Math.floor(pt.x / 32), ty = Math.floor(pt.y / 32);
+      expect(isSolidTile(w.grid.cells[ty * 96 + tx]), `敌人 (${tx},${ty}) 不能入墙`).toBe(false);
+      for (const prop of w.props) if (prop.solid) {
+        const d = Math.hypot(pt.x - prop.x, pt.y - prop.y);
+        expect(d, `敌人 (${tx},${ty}) 不能压 ${prop.kind}`).toBeGreaterThanOrEqual(prop.r + 14);
+      }
+    }
+    for (let x = 0; x < 96; x++) for (let y = 0; y < 96; y++) {
+      const out = x < 2 || x >= 94 || y < 2 || y >= 94;
+      if (out && w.zoneId[y * 96 + x] === Z.NONE) {
+        expect(isSolidTile(w.grid.cells[y * 96 + x]), `边界 (${x},${y}) 必须封闭`).toBe(true);
+      }
+    }
   });
 
   test('资源/敌人全部合法：不在墙上、不在荒野、巡逻点不压道具', () => {
@@ -189,7 +219,7 @@ describe('对局流程', () => {
     (game as any).tryInteract();
     expect(game.save.lore).toContain('note1');
     // 花盆
-    g.px = 16.5 * 32; g.py = 19.5 * 32;
+    g.px = 15.5 * 32; g.py = 18.5 * 32;
     game.update(1 / 60);
     (game as any).tryInteract();
     expect(g.st.keys.flower).toBe(true);

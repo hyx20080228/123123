@@ -34,12 +34,14 @@ h2.sub{font-size:15px;color:var(--sub);letter-spacing:2px;margin-top:6px}
 #lobby{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;z-index:5;pointer-events:none}
 #lobby .lobby-top{display:flex;justify-content:space-between;align-items:flex-start;padding:36px 44px 0}
 #lobby .lobby-bottom{display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 30px 34px;background:linear-gradient(180deg,transparent,rgba(10,12,18,.86) 30%);pointer-events:auto}
-#lobby h1.title{font-size:52px;letter-spacing:8px;color:#fff;text-shadow:0 0 24px rgba(240,161,60,.55),0 4px 30px rgba(0,0,0,.6)}
+#lobby h1.title{font-size:58px;letter-spacing:10px;color:#fff;text-shadow:0 0 26px rgba(240,161,60,.6),0 6px 34px rgba(0,0,0,.7);background:linear-gradient(180deg,#fff 30%,#ffd7a0 70%,#f0a13c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#lobby .title-en{font-size:13px;letter-spacing:10px;color:#8b98ad;margin-top:6px}
+#lobby h2.sub{font-size:13px;color:#d8c9a8;letter-spacing:2px;margin-top:10px}
 #lobby h2.sub{font-size:14px;color:#d8c9a8;letter-spacing:3px;margin-top:8px}
 #lobby .lt-right{font-size:13px;gap:18px}
 #lobby .stats b{color:var(--amber2);font-size:16px}
 .char-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.char-card{width:168px;padding:14px 12px 12px;border:1px solid var(--line);border-radius:14px;background:rgba(20,26,36,.92);text-align:center;transition:all .15s;position:relative;cursor:pointer;pointer-events:auto}
+.char-card{width:186px;padding:14px 12px 12px;border:1px solid var(--line);border-radius:14px;background:rgba(20,26,36,.92);text-align:center;transition:all .15s;position:relative;cursor:pointer;pointer-events:auto}
 .char-card:hover{transform:translateY(-4px);border-color:#5a6a88}
 .char-card.sel{border-color:var(--amber);box-shadow:0 0 0 2px rgba(240,161,60,.4) inset,0 0 26px rgba(240,161,60,.25)}
 .char-card.sel::after{content:'✓ 已选择';position:absolute;top:-10px;right:10px;background:var(--amber);color:#241505;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px}
@@ -50,8 +52,10 @@ h2.sub{font-size:15px;color:var(--sub);letter-spacing:2px;margin-top:6px}
 .cc-row{display:flex;align-items:center;gap:6px;width:100%;font-size:10px;color:var(--sub)}
 .cc-row i{font-style:normal;width:30px;text-align:left}
 .cc-skill{font-size:10.5px;color:#c9a4ff;margin-top:8px;line-height:1.5;text-align:left;padding:0 6px}
+.cc-desc{font-size:10px;color:#7f8ea3;line-height:1.55;text-align:left;padding:0 6px;margin-top:6px;border-top:1px dashed rgba(120,140,170,.3);padding-top:6px}
 #btn-go.big{font-size:19px;padding:12px 34px;letter-spacing:4px}
-.lobby-hint{font-size:12px;color:var(--sub);letter-spacing:1px;margin-top:2px}
+.lobby-hint{font-size:12.5px;color:var(--sub);letter-spacing:2px;margin-top:4px;text-shadow:0 2px 8px #000}
+.lobby-hint::before,.lobby-hint::after{color:var(--amber);opacity:.7}
 
 /* ---------- HUD 菜单按钮 ---------- */
 #hud .top-right{position:absolute;top:14px;right:16px}

@@ -124,28 +124,28 @@ export function generateWorld(): World {
     else bigDoorV(x0 + w, y0 + Math.floor(h / 2) - 1, T.RES_F);
   };
   // 14 号院药铺（可进）
-  resHouse(10, 8, 11, 9, 'S');
+  resHouse(11, 8, 11, 9, 'S');
   // 其余院落
   const resHouses: [number, number, number, number][] = [
-    [5, 5, 7, 6], [14, 5, 7, 6], [23, 5, 7, 6],
-    [5, 20, 7, 6], [23, 20, 7, 6], [26, 12, 5, 6],
-    [20, 22, 7, 6], [7, 13, 5, 6],
+    [4, 4, 6, 6], [24, 4, 6, 6], [4, 12, 6, 5], [24, 12, 6, 5],
+    [4, 19, 6, 5], [24, 19, 6, 5], [12, 19, 5, 5], [18, 19, 5, 5],
   ];
   for (const [x, y, w, h] of resHouses) resHouse(x, y, w, h, (x + y) % 2 ? 'S' : 'E');
   // 花盆（月季）→ 钥匙
-  gset(grid, 16, 19, T.YARD);
-  props.push({ kind: 'bush', x: 16.5 * TILE, y: 19.5 * TILE, r: 10, solid: false, zone: Z.RES });
-  interacts.push({ id: 'flowerpot', x: 16.5 * TILE, y: 19.5 * TILE, r: 42, label: '查看月季花盆', act: 'flowerpot' });
+  gset(grid, 15, 18, T.YARD);
+  props.push({ kind: 'bush', x: 15.5 * TILE, y: 18.5 * TILE, r: 10, solid: false, zone: Z.RES });
+  interacts.push({ id: 'flowerpot', x: 15.5 * TILE, y: 18.5 * TILE, r: 42, label: '查看月季花盆', act: 'flowerpot' });
   pickups.push({ item: 'note1', x: 14 * TILE, y: 12 * TILE, zone: Z.RES });
   pickups.push({ item: 'p9', x: 13 * TILE + 10, y: 15 * TILE + 8, zone: Z.RES });
   // 院内杂物（固定摆放，绝不堵门/上路）
   const yardProps: [string, number, number, boolean][] = [
-    ['bush', 7, 11, false], ['bench', 24, 9, false], ['well', 26, 18, false], ['crate', 5, 25, true],
-    ['barrel', 27, 25, true], ['bike', 8, 27, false], ['bush', 23, 18, false], ['bench', 6, 20, false],
-    ['crate', 18, 21, true], ['bush', 25, 6, false], ['barrel', 7, 18, true], ['well', 20, 19, false],
-    ['bush', 29, 9, false], ['shelf', 8, 9, true], ['crate', 19, 11, true], ['fridge', 21, 15, true],
-    ['bush', 12, 20, false], ['bench', 15, 21, false],
+    ['bush', 7, 11, false], ['bench', 23, 9, false], ['well', 26, 18, false], ['crate', 5, 25, true],
+    ['barrel', 27, 25, true], ['bike', 8, 27, false], ['bush', 23, 18, false], ['bench', 6, 26, false],
+    ['crate', 17, 26, true], ['bush', 25, 11, false], ['barrel', 7, 18, true], ['well', 25, 18, false],
+    ['bush', 29, 11, false], ['shelf', 9, 11, true], ['crate', 19, 18, true], ['fridge', 10, 18, true],
+    ['bush', 11, 26, false], ['bench', 15, 25, false],
   ];
+
   for (const [kind, tx, ty, solid] of yardProps)
     props.push({ kind: kind as any, x: tx * TILE + 16, y: ty * TILE + 16, r: kind === 'well' ? 13 : kind === 'bench' ? 12 : kind === 'bush' ? 10 : 11, solid, zone: Z.RES });
 
@@ -170,10 +170,10 @@ export function generateWorld(): World {
   // 接种室（49..52, 6..9）
   wallRect(49, 5, 52, 9, T.HOS_W, T.HOS_F);
   bigDoorH(49, 9, T.HOS_F);
-  pickups.push({ item: 'note2', x: 50 * TILE + 10, y: 7 * TILE + 10, zone: Z.HOS });
+  pickups.push({ item: 'note2', x: 50 * TILE + 10, y: 8 * TILE + 8, zone: Z.HOS });
   pickups.push({ item: 'vest', x: 50 * TILE + 24, y: 18 * TILE + 6, zone: Z.HOS });
-  pickups.push({ item: 'cloth', count: 2, x: 38 * TILE + 12, y: 7 * TILE + 6, zone: Z.HOS });
-  pickups.push({ item: 'canfood', count: 2, x: 41 * TILE + 8, y: 9 * TILE + 4, zone: Z.HOS });
+  pickups.push({ item: 'cloth', count: 2, x: 40 * TILE + 8, y: 12 * TILE + 8, zone: Z.HOS });
+  pickups.push({ item: 'canfood', count: 2, x: 44 * TILE + 4, y: 10 * TILE + 8, zone: Z.HOS });
   props.push({ kind: 'bed', x: 47 * TILE, y: 18 * TILE, r: 20, solid: true, zone: Z.HOS });
   props.push({ kind: 'bed', x: 50 * TILE, y: 14 * TILE, r: 20, solid: true, zone: Z.HOS });
   props.push({ kind: 'bed', x: 44 * TILE, y: 15 * TILE, r: 20, solid: true, zone: Z.HOS });
@@ -188,11 +188,11 @@ export function generateWorld(): World {
   pickups.push({ item: 'bolt', count: 2, x: 37 * TILE + 12, y: 18 * TILE + 6, zone: Z.HOS });
   pickups.push({ item: 'wire', count: 2, x: 49 * TILE + 6, y: 20 * TILE + 6, zone: Z.HOS });
   pickups.push({ item: 'cell', count: 2, x: 44 * TILE + 4, y: 19 * TILE + 4, zone: Z.HOS });
-  pickups.push({ item: 'canfood', count: 2, x: 45 * TILE + 4, y: 7 * TILE + 4, zone: Z.HOS });
+  pickups.push({ item: 'canfood', count: 2, x: 46 * TILE + 4, y: 16 * TILE + 4, zone: Z.HOS });
   pickups.push({ item: 'cloth', count: 2, x: 44 * TILE + 6, y: 13 * TILE + 6, zone: Z.HOS });
   // 医院巡逻
   enemies.push({ x: 46 * TILE, y: 15 * TILE, elite: false, zone: Z.HOS, patrol: [{ x: 45 * TILE, y: 14 * TILE }, { x: 50 * TILE, y: 18 * TILE }, { x: 44 * TILE, y: 19 * TILE }] });
-  enemies.push({ x: 44 * TILE, y: 8 * TILE, elite: false, zone: Z.HOS, patrol: [{ x: 41.5 * TILE, y: 8 * TILE }, { x: 51 * TILE, y: 8 * TILE }] });
+  enemies.push({ x: 44 * TILE, y: 12 * TILE, elite: false, zone: Z.HOS, patrol: [{ x: 42 * TILE, y: 13 * TILE }, { x: 45 * TILE, y: 13 * TILE }] });
   enemies.push({ x: 50 * TILE, y: 12 * TILE, elite: true, zone: Z.HOS, patrol: [{ x: 47 * TILE, y: 13 * TILE }, { x: 52 * TILE, y: 19 * TILE }] });
 
   // ================= 北部广播站 =================
@@ -206,16 +206,16 @@ export function generateWorld(): World {
   pickups.push({ item: 'note5', x: 64 * TILE + 10, y: 8 * TILE + 10, zone: Z.RAD });
   pickups.push({ item: 'tape', x: 70 * TILE + 8, y: 8.4 * TILE, zone: Z.RAD });
   pickups.push({ item: 'antir', count: 1, x: 66 * TILE + 6, y: 9 * TILE + 6, zone: Z.RAD });
-  pickups.push({ item: 'wire', count: 2, x: 60 * TILE + 8, y: 7 * TILE + 6, zone: Z.RAD });
-  pickups.push({ item: 'cell', count: 2, x: 72 * TILE + 6, y: 13 * TILE + 6, zone: Z.RAD });
-  pickups.push({ item: 'cloth', count: 2, x: 74 * TILE + 6, y: 13 * TILE + 6, zone: Z.RAD });
-  pickups.push({ item: 'bolt', count: 2, x: 60 * TILE + 6, y: 14 * TILE + 6, zone: Z.RAD });
+  pickups.push({ item: 'wire', count: 2, x: 63 * TILE + 8, y: 9 * TILE + 6, zone: Z.RAD });
+  pickups.push({ item: 'cell', count: 2, x: 68 * TILE + 6, y: 13 * TILE + 4, zone: Z.RAD });
+  pickups.push({ item: 'cloth', count: 2, x: 65 * TILE + 4, y: 12 * TILE + 6, zone: Z.RAD });
+  pickups.push({ item: 'bolt', count: 2, x: 62 * TILE + 6, y: 14 * TILE + 6, zone: Z.RAD });
   props.push({ kind: 'shelf', x: 63 * TILE, y: 7.5 * TILE, r: 14, solid: true, zone: Z.RAD });
   props.push({ kind: 'shelf', x: 71 * TILE, y: 7.5 * TILE, r: 14, solid: true, zone: Z.RAD });
   // 敌群
   enemies.push({ x: 64 * TILE, y: 15 * TILE, elite: false, zone: Z.RAD, patrol: [{ x: 61 * TILE, y: 14 * TILE }, { x: 73 * TILE, y: 14 * TILE }] });
   enemies.push({ x: 66.5 * TILE, y: 13.2 * TILE, elite: true, zone: Z.RAD, patrol: [{ x: 62 * TILE, y: 13.2 * TILE }, { x: 71 * TILE, y: 13.2 * TILE }] });
-  enemies.push({ x: 61 * TILE + 8, y: 6 * TILE + 4, elite: false, zone: Z.RAD, patrol: [{ x: 61 * TILE + 8, y: 6 * TILE + 4 }, { x: 75 * TILE, y: 5.5 * TILE }] });
+  enemies.push({ x: 65 * TILE + 8, y: 9 * TILE + 4, elite: false, zone: Z.RAD, patrol: [{ x: 64 * TILE + 8, y: 9 * TILE + 4 }, { x: 71 * TILE, y: 9 * TILE + 4 }] });
   props.push({ kind: 'barrel', x: 59.5 * TILE, y: 6 * TILE, r: 12, solid: true, zone: Z.RAD });
   props.push({ kind: 'barrel', x: 59.5 * TILE, y: 9 * TILE, r: 12, solid: true, zone: Z.RAD });
   props.push({ kind: 'crate', x: 75 * TILE, y: 12 * TILE, r: 12, solid: true, zone: Z.RAD });
@@ -271,14 +271,14 @@ export function generateWorld(): World {
   pickups.push({ item: 'cloth', count: 2, x: 80 * TILE + 6, y: 32 * TILE + 6, zone: Z.WH });
   pickups.push({ item: 'bolt', count: 2, x: 69 * TILE + 12, y: 29 * TILE + 12, zone: Z.WH });
   pickups.push({ item: 'cloth', count: 2, x: 70 * TILE + 6, y: 32 * TILE + 6, zone: Z.WH });
-  pickups.push({ item: 'cell', count: 2, x: 74 * TILE + 6, y: 28 * TILE + 6, zone: Z.WH });
+  pickups.push({ item: 'cell', count: 2, x: 73 * TILE + 6, y: 28 * TILE + 6, zone: Z.WH });
   pickups.push({ item: 'wire', count: 2, x: 72 * TILE + 6, y: 30 * TILE + 6, zone: Z.WH });
   pickups.push({ item: 'canfood', count: 2, x: 69 * TILE + 6, y: 30 * TILE + 6, zone: Z.WH });
   props.push({ kind: 'crate', x: 68 * TILE, y: 28 * TILE, r: 12, solid: true, zone: Z.WH });
   props.push({ kind: 'crate', x: 68 * TILE, y: 32 * TILE, r: 12, solid: true, zone: Z.WH });
   props.push({ kind: 'crate', x: 74 * TILE, y: 32 * TILE, r: 12, solid: true, zone: Z.WH });
   props.push({ kind: 'crate', x: 80 * TILE, y: 28 * TILE, r: 12, solid: true, zone: Z.WH });
-  props.push({ kind: 'barrel', x: 76 * TILE, y: 26.5 * TILE, r: 12, solid: true, zone: Z.WH });
+  props.push({ kind: 'barrel', x: 74 * TILE, y: 28 * TILE, r: 12, solid: true, zone: Z.WH });
   props.push({ kind: 'barrel', x: 87 * TILE, y: 32 * TILE, r: 12, solid: true, zone: Z.WH });
   // 集装箱货场（南）
   for (let i = 0; i < 7; i++) {
@@ -339,7 +339,7 @@ export function generateWorld(): World {
   pickups.push({ item: 'canfood', count: 2, x: 18 * TILE + 4, y: 10 * TILE + 6, zone: Z.RES });
   pickups.push({ item: 'cloth', count: 2, x: 16 * TILE + 6, y: 14 * TILE + 4, zone: Z.RES });
   pickups.push({ item: 'bolt', count: 2, x: 19 * TILE + 6, y: 15 * TILE + 4, zone: Z.RES });
-  pickups.push({ item: 'cell', count: 3, x: 11 * TILE + 8, y: 15 * TILE + 4, zone: Z.RES });
+  pickups.push({ item: 'cell', count: 3, x: 12 * TILE + 8, y: 15 * TILE + 4, zone: Z.RES });
 
   // ---------- 街灯 ----------
   const lampAt = (x: number, y: number, r = 130) => {
@@ -353,7 +353,7 @@ export function generateWorld(): World {
     [47, 34, 150], [47, 48, 160], [47, 62, 170], [47, 76, 170], [47, 87, 170],
     // 居民区/医院/广播站/地铁支路
     [17, 31, 150], [17, 38, 150], [45, 21, 150], [52, 15, 150], [46, 8, 140], [57, 13, 140],
-    [57, 54, 140], [63, 60, 130], [68, 58, 130], [80, 58, 130],
+    [57, 54, 140], [68, 58, 130], [68, 58, 130], [80, 58, 130],
     // 建筑周边照明
     [65, 30, 140], [72, 36, 140], [86, 36, 140], [44, 48, 140], [55, 34, 140], [34, 46, 140],
   ]) {

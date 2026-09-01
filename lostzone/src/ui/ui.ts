@@ -108,12 +108,25 @@ export class Ui implements HudApi {
     if (!this.lobbyScene || !this.app) return;
     if (this.previewChar) { this.previewChar.c.destroy(); this.previewChar = null; }
     const char = CHARS.find(c => c.id === charId)!;
+    // 底座光环（立绘脚下聚光圈）
+    if (this.previewBase) { this.previewBase.destroy(); this.previewBase = null; }
+    const base = new Graphics();
+    base.ellipse(0, 0, 60, 20).fill({ color: char.accent, alpha: 0.12 });
+    base.ellipse(0, 0, 46, 15).stroke({ width: 2, color: 0xffc66b, alpha: 0.55 });
+    base.ellipse(0, 0, 58, 19).stroke({ width: 4, color: char.accent, alpha: 0.18 });
+    const bx = this.app.screen.width * 0.30, by = this.app.screen.height * 0.70;
+    base.position.set(bx, by);
+    base.zIndex = 0;
+    this.lobbyScene.addChild(base);
+    this.previewBase = base;
     const spr = createCharSprite(char);
-    spr.c.scale.set(4.2);
-    spr.c.position.set(this.app.screen.width * 0.30, this.app.screen.height * 0.66);
+    spr.c.scale.set(4.6);
+    spr.c.position.set(bx, by);
+    spr.c.zIndex = 1;
     this.lobbyScene.addChild(spr.c);
     this.previewChar = spr;
   }
+  private previewBase: Container | null = null;
 
   // ================= 大厅 HTML =================
   private buildLobby() {
@@ -132,6 +145,7 @@ export class Ui implements HudApi {
           <div class="cc-row"><i>隐蔽</i>${bar(st.stealth)}</div>
         </div>
         <div class="cc-skill">✦ ${st.skill}</div>
+        <div class="cc-desc">${c.desc}</div>
       </div>`;
     }).join('');
     this.root.innerHTML = `
@@ -139,7 +153,8 @@ export class Ui implements HudApi {
       <div class="lobby-top">
         <div class="lt-left">
           <h1 class="title">失落区</h1>
-          <h2 class="sub">LOST ZONE · 1-4 人 PvPvE 搜打撤</h2>
+          <div class="title-en">L O S T &nbsp; Z O N E</div>
+          <h2 class="sub">旧城区 · 搜打撤 · 等你把真相带回来</h2>
         </div>
         <div class="lt-right stats">
           <span>旧币 <b>${fmt(s.gold)}</b></span>
@@ -157,7 +172,7 @@ export class Ui implements HudApi {
           <button class="btn" id="btn-help">操作说明</button>
           <button class="btn" id="btn-settings">⚙ 设置</button>
         </div>
-        <div class="lobby-hint">选择你的拾荒者 · 在旧城区找回被遗忘的真相</div>
+        <div class="lobby-hint">▸ 点击卡片选择拾荒者 · 左侧立绘实时预览动作 ▸</div>
       </div>
     </div>`;
     this.root.querySelectorAll('.char-card').forEach(el => {
@@ -230,12 +245,13 @@ export class Ui implements HudApi {
 
   // ================= 屏幕框架 =================
   private screen(id: string, html = ''): HTMLElement {
+    // 打开任何弹窗前先清除所有旧弹窗（防重叠）
+    this.closeAll();
     const div = document.createElement('div');
     div.className = 'screen open'; div.id = id;
     div.innerHTML = `<div class="window panel"><div class="closebar"><button class="btn small">返回</button></div>${html}</div>`;
     div.querySelector('.closebar button')!.addEventListener('click', () => { sfx.click(); div.remove(); });
     div.addEventListener('click', (e) => { if (e.target === div) div.remove(); });
-    this.root.querySelectorAll('.screen.open').forEach(x => x.remove());
     this.root.appendChild(div);
     return div;
   }
@@ -490,6 +506,7 @@ export class Ui implements HudApi {
 
   // ================= 弹窗 =================
   private modal(html: string): HTMLElement {
+    this.closeAll();
     const div = document.createElement('div');
     div.id = 'modal'; div.className = 'open';
     div.innerHTML = `<div class="window panel">${html}</div>`;
@@ -497,7 +514,7 @@ export class Ui implements HudApi {
     return div;
   }
   closeAll() {
-    document.querySelectorAll('#modal, .screen.open, #pause.open').forEach(el => el.remove());
+    document.querySelectorAll('#modal, .screen.open, #pause, #tutorial').forEach(el => el.remove());
   }
 
   openLore(loreId: string, onClose?: () => void) {
@@ -656,11 +673,11 @@ export class Ui implements HudApi {
       <button class="btn danger" id="p-exit">⌂ 返回营地</button>
     </div>`;
     document.body.appendChild(div);
-    div.querySelector('#p-res')!.addEventListener('click', () => { div.remove(); onResume(); });
-    div.querySelector('#p-help')!.addEventListener('click', () => { div.remove(); this.helpScreen(); });
-    div.querySelector('#p-lore')!.addEventListener('click', () => { div.remove(); this.loreWall(); });
+    div.querySelector('#p-res')!.addEventListener('click', () => { this.closeAll(); div.remove(); onResume(); });
+    div.querySelector('#p-help')!.addEventListener('click', () => { div.remove(); onResume(); this.helpScreen(); });
+    div.querySelector('#p-lore')!.addEventListener('click', () => { div.remove(); onResume(); this.loreWall(); });
     div.querySelector('#p-settings')!.addEventListener('click', () => { div.remove(); this.settingsScreen(onSettings); });
-    div.querySelector('#p-exit')!.addEventListener('click', () => { div.remove(); onExit(); });
+    div.querySelector('#p-exit')!.addEventListener('click', () => { this.closeAll(); div.remove(); onExit(); });
   }
   openPause(onResume: () => void, onExit: () => void) { this.openMenu(onResume, onExit, () => {}); }
 
