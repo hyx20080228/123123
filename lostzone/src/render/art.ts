@@ -20,7 +20,7 @@ export interface CharSprite {
   c: Container; char: CharDef;
   body: Graphics; head: Graphics; earL: Graphics; earR: Graphics;
   legL: Graphics; legR: Graphics; armL: Graphics; armR: Graphics;
-  tail: Graphics; weapon: Container; pack: Graphics; scarf: Graphics; goggle: Graphics;
+  tail: Graphics; weapon: Container; pack: Graphics; scarf: Graphics;
   shadow: Graphics; weaponFx: Graphics;
 }
 
@@ -127,7 +127,7 @@ export function createCharSprite(char: CharDef): CharSprite {
 
   return { c, char, body, head, earL, earR, legL, legR, armL, armR, tail, weapon, pack,
     scarf: (c.children.find(x => (x as any).__scarf) as any) ?? undefined,
-    goggle: undefined as any, shadow, weaponFx };
+    shadow, weaponFx };
 }
 
 function drawLeg(gx: Graphics, x: number, color: string) {

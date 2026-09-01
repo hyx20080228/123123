@@ -15,12 +15,6 @@ export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export const dist2 = (ax: number, ay: number, bx: number, by: number) => {
   const dx = bx - ax, dy = by - ay; return dx * dx + dy * dy;
 };
-export const angLerp = (a: number, b: number, t: number) => {
-  let d = (b - a) % TAU;
-  if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU;
-  return a + d * t;
-};
-
 // --------- 网格 ---------
 export interface Grid { w: number; h: number; cells: Uint8Array; }
 export const gget = (g: Grid, x: number, y: number): number => {
@@ -57,7 +51,6 @@ export function bfsWalkable(g: Grid, walkable: (t: number) => boolean, sx: numbe
   }
   return came;
 }
-export function wrapIdxToRects(grid: Grid) { return grid; }
 export function getTileWrap(g: Grid, x: number, y: number) { return gget(g, x, y); }
 
 export function bfsNext(came: Int32Array, w: number, sx: number, sy: number, tx: number, ty: number): [number, number] | null {
@@ -90,15 +83,4 @@ export function raycastGrid(g: Grid, solid: (t: number) => boolean,
     if (t * len > maxDist) break;
   }
   return { hit: false, x: x1, y: y1, t: 1 };
-}
-
-// --------- 简易事件总线 ---------
-export type Listener = (payload?: any) => void;
-export class Bus {
-  private m = new Map<string, Listener[]>();
-  on(ev: string, fn: Listener) {
-    if (!this.m.has(ev)) this.m.set(ev, []);
-    this.m.get(ev)!.push(fn);
-  }
-  emit(ev: string, payload?: any) { (this.m.get(ev) || []).forEach(f => f(payload)); }
 }

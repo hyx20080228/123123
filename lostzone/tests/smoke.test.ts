@@ -94,6 +94,33 @@ describe('旧城区地图', () => {
     }
   });
 
+  test('资源/敌人全部合法：不在墙上、不在荒野、巡逻点不压道具', () => {
+    const w = generateWorld();
+    for (const p of w.pickups) {
+      const tx = Math.floor(p.x / 32), ty = Math.floor(p.y / 32);
+      expect(isSolidTile(w.grid.cells[ty * 96 + tx]), `拾取 ${p.item}@(${tx},${ty}) 不能在墙上`).toBe(false);
+      expect(w.zoneId[ty * 96 + tx], `拾取 ${p.item}@(${tx},${ty}) 必须在建筑区域`).not.toBe(Z.NONE);
+    }
+    for (const e of w.enemies) {
+      for (const pt of [{ x: e.x, y: e.y }, ...e.patrol]) {
+        const tx = Math.floor(pt.x / 32), ty = Math.floor(pt.y / 32);
+        expect(isSolidTile(w.grid.cells[ty * 96 + tx]), '敌人/锚点不能在墙上').toBe(false);
+        for (const prop of w.props) {
+          if (!prop.solid) continue;
+          const d = Math.hypot(pt.x - prop.x, pt.y - prop.y);
+          expect(d, `敌人锚点 (${tx},${ty}) 不能压在 ${prop.kind} 上`).toBeGreaterThanOrEqual(prop.r + 14);
+        }
+      }
+      for (const pk of w.pickups) {
+        for (const prop of w.props) {
+          if (!prop.solid) continue;
+          const d = Math.hypot(pk.x - prop.x, pk.y - prop.y);
+          expect(d, `拾取 ${pk.item} 不能压在 ${prop.kind} 上`).toBeGreaterThanOrEqual(prop.r + 8);
+        }
+      }
+    }
+  });
+
   test('锁门时：地窖/药房/储物间不可达', () => {
     const w = generateWorld();
     closedAllDoors(w);
@@ -113,6 +140,27 @@ describe('对局流程', () => {
     store = { toasts: [], hud: null, result: null, puzzleCb: null, keypadCb: null };
     const save = structuredClone(DEFAULT_SAVE);
     game = new Game(app, world, save, CHARS[0], makeHud(store) as any);
+  });
+
+  test('近战攻击可连续使用（第二次点击不卡死）', () => {
+    const g: any = game;
+    // 装备砍肉刀
+    if (!g.st.slots[0] || g.st.slots[0].item !== 'cleaver') {
+      g.st.slots[0] = { item: 'cleaver', count: 1 };
+      g.slotIdx = 0;
+      g.replaceWeapon();
+    }
+    // 第一次点击
+    g.justClicked = 1;
+    game.update(1 / 60);
+    expect(g.meleeT).toBeGreaterThan(0);
+    // 等挥砍结束
+    for (let i = 0; i < 20; i++) game.update(1 / 60);
+    expect(g.meleeT).toBe(0);
+    // 第二次点击必须再次触发
+    g.justClicked = 1;
+    game.update(1 / 60);
+    expect(g.meleeT).toBeGreaterThan(0);
   });
 
   test('运行 300 帧不崩溃且可移动', () => {

@@ -1,7 +1,8 @@
 // ============ 对局逻辑：玩家 / 锈犬 / 战斗 / 搜刮 / 撤离 / 叙事 ============
-import { Application, Container, Graphics } from 'pixi.js';
+const AUTO_PICK = ['cloth', 'bolt', 'wire', 'canfood', 'cell', 'ammo', 'can', 'titanium', 'antir', 'sigcell'];
+import { Application, Container, Graphics, Sprite } from 'pixi.js';
 import { World, T, Z, TILE, W, H, ZONES, isSolidTile, PickupDef } from '../world/mapgen';
-import { gget, bfsWalkable, bfsNext, raycastGrid, clamp, lerp, angLerp, TAU, dist2 } from '../core/util';
+import { gget, bfsWalkable, bfsNext, raycastGrid, clamp, lerp, TAU, dist2 } from '../core/util';
 import { ITEMS, LORE, SaveData, CharDef, Settings, DEFAULT_SETTINGS } from '../core/defs';
 import { newRun, RunState, addSlot, addBag, bagCount, autoLoadout, storeSave } from './state';
 import { RendererCtx } from '../render/renderer';
@@ -37,9 +38,9 @@ interface EnemyEnt {
   x: number; y: number; hp: number; maxHp: number; r: number; elite: boolean; speed: number;
   state: 'patrol' | 'chase' | 'attack' | 'stun' | 'dead';
   patrol: { x: number; y: number }[]; pi: number; alert: number;
-  t: number; actT: number; cool: number; repath: number; path: Int32Array | null; pathT: number;
-  hitT: number; sprite: HoundSprite; zone: number; barkT: number; telegraph: Graphics; eliteGlow: Graphics;
-  wanderT: number; wx: number; wy: number; waitT: number;
+  t: number; actT: number; cool: number; repath: number; path: Int32Array | null; pathOK: boolean;
+  hitT: number; sprite: HoundSprite; zone: number; barkT: number;
+  wx: number; wy: number; waitT: number; stuckT: number; home: { x: number; y: number };
 }
 interface LightPulse { x: number; y: number; r: number; a: number; ttl: number }
 
@@ -101,10 +102,19 @@ export class Game {
     const w = this.world;
     for (const p of w.props) {
       const c = makeProp(p.kind, p.data);
-      c.position.set(p.x, p.y);
-      c.zIndex = p.y;
-      this.rc.objLayer.addChild(c);
-      this.propsC.push(c);
+      let node: Container = c;
+      try {
+        // 静态道具烘焙为单张纹理 Sprite：大幅降低 draw call 与内存
+        const tex = this.app.renderer.generateTexture({ target: c, clearColor: '#00000000', antialias: true });
+        const ss = new Sprite(tex);
+        ss.anchor.set(0.5);
+        node = ss;
+        c.destroy({ children: true });
+      } catch { /* 无渲染器（测试/回退）时保留 Graphics */ }
+      node.position.set(p.x, p.y);
+      node.zIndex = p.y;
+      this.rc.objLayer.addChild(node);
+      this.propsC.push(node);
       if (p.solid) this.propRects.push({ x: p.x, y: p.y, r: p.r });
     }
     for (const d of Object.values(w.doors)) {
@@ -129,17 +139,12 @@ export class Game {
       sprite.c.position.set(e.x, e.y);
       sprite.c.zIndex = e.y;
       this.rc.objLayer.addChild(sprite.c);
-      const telegraph = new Graphics(); telegraph.zIndex = 0;
-      const glow = new Graphics();
-      glow.circle(0, 0, 20).fill({ color: 0xff4030, alpha: 0 }).zIndex = -1;
-      sprite.c.addChild(glow);
       this.enemies.push({
         x: e.x, y: e.y, hp: e.elite ? 190 : 70, maxHp: e.elite ? 190 : 70, r: e.elite ? 15 : 13,
         elite: e.elite, speed: e.elite ? 150 : 126, state: 'patrol', patrol: e.patrol,
-        pi: 0, alert: 0, t: Math.random() * 10, actT: 0, cool: 0, repath: 0, path: null, pathT: 0,
-        hitT: 0, sprite, zone: e.zone, barkT: 0, telegraph,
-        eliteGlow: e.elite ? glow : glow,
-        wanderT: 0, wx: e.x, wy: e.y, waitT: 0,
+        pi: 0, alert: 0, t: Math.random() * 10, actT: 0, cool: 0, repath: 0, path: null, pathOK: false,
+        hitT: 0, sprite, zone: e.zone, barkT: 0,
+        wx: e.x, wy: e.y, waitT: 0, stuckT: 0, home: { x: e.x, y: e.y },
       });
     }
     this.beacon.c.position.set(w.extraction.x, w.extraction.y);
@@ -180,7 +185,7 @@ export class Game {
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = this.app.screen;
     this.app.stage.on('pointermove', (e) => { this.mouse.x = e.global.x; this.mouse.y = e.global.y; });
-    window.addEventListener('mousedown', (e) => { if (e.button === 0) { this.mouse.down = true; this.justClicked = true; } if (e.button === 2) this.mouse.rdown = true; });
+    window.addEventListener('mousedown', (e) => { if (e.button === 0) { this.mouse.down = true; this.justClicked = Math.min(3, this.justClicked + 1); } if (e.button === 2) this.mouse.rdown = true; });
     window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mouse.down = false; if (e.button === 2) this.mouse.rdown = false; });
     window.addEventListener('contextmenu', (e) => { if (this.running()) e.preventDefault(); });
   }
@@ -247,6 +252,7 @@ export class Game {
     }
     // 计时器
     this.fireT = Math.max(0, this.fireT - dt);
+    this.meleeT = Math.max(0, this.meleeT - dt);
     this.hitT = Math.max(0, this.hitT - dt);
     this.invuln = Math.max(0, this.invuln - dt);
     this.hurtFlash = Math.max(0, this.hurtFlash - dt);
@@ -318,8 +324,8 @@ export class Game {
     if (!slot || this.reloadT > 0 || this.meleeT > 0) return;
     const def = ITEMS[slot.item];
     if (def.kind === 'melee') {
-      if ((this.mouse.down || this.justClicked) && this.fireT <= 0) {
-        this.justClicked = false;
+      if ((this.mouse.down || this.justClicked > 0) && this.fireT <= 0) {
+        if (this.justClicked > 0) this.justClicked--;
         this.fireT = 1 / def.rate!;
         this.meleeT = 0.22;
         this.meleeAttack(def.dmg!, def.range!, def.meleeArc!);
@@ -328,10 +334,10 @@ export class Game {
       return;
     }
     if (def.kind !== 'gun') return;
-    if (this.mouse.down && (def.auto || this.mouse.rdown || this.justClicked)) {
-      this.justClicked = false;
+    if (this.mouse.down && (def.auto || this.mouse.rdown || this.justClicked > 0)) {
       if (slot.count <= 0) { this.tryReload(); return; }
       if (this.fireT <= 0) {
+        if (this.justClicked > 0) this.justClicked--;
         this.fireT = 1 / def.rate!;
         slot.count--;
         const spread = def.spread! * (this.sprint || this.moving ? 1.6 : 1) * (this.sprint ? 2 : 1);
@@ -344,7 +350,7 @@ export class Game {
       }
     }
   }
-  private justClicked = false;
+  private justClicked = 0;
   private dead = false;
   private meleeAttack(dmg: number, range: number, arc: number) {
     let hit = false;
@@ -454,7 +460,7 @@ export class Game {
       switch (e.state) {
         case 'patrol': this.aiPatrol(e, dt); break;
         case 'chase': this.aiChase(e, dt, d2p, sees); break;
-        case 'attack': this.aiAttack(e, dt, d2p); break;
+        case 'attack': this.aiAttack(e, dt, d2p, sees); break;
         case 'stun': {
           e.actT -= dt;
           if (e.actT <= 0) e.state = 'chase';
@@ -462,7 +468,7 @@ export class Game {
         }
       }
       const atkPhase = e.state === 'attack' ? clamp(e.actT / 0.62, 0, 1) : -1;
-      poseHound(e.sprite, e.t, e.state === 'patrol' || e.state === 'chase', e.alert, false, atkPhase);
+      poseHound(e.sprite, e.t, (e.state === 'patrol' && e.waitT <= 0) || e.state === 'chase', e.alert, false, atkPhase);
       e.sprite.c.position.set(e.x, e.y + Math.sin(e.t * 8) * (e.state === 'attack' ? 1.4 : 0));
       e.sprite.c.zIndex = e.y;
     }
@@ -481,102 +487,164 @@ export class Game {
     return true;
   }
 
-  /** 自由巡逻：在生成点周边随机游走（BFS 寻路 + 停留 + 换点） */
-  private aiPatrol(e: EnemyEnt, dt: number) {
-    // 等待
-    if (e.waitT > 0) { e.waitT -= dt; return; }
-    const d = Math.hypot(e.wx - e.x, e.wy - e.y);
-    const tx = Math.floor(e.x / TILE), ty = Math.floor(e.y / TILE);
-    // 每 0.8s 重新寻路到当前漫游点
-    e.repath -= dt;
-    if (e.repath <= 0) {
-      e.repath = 0.8;
-      e.path = bfsWalkable(this.world.grid, (t) => !isSolidTile(t), tx, ty,
-        Math.floor(e.wx / TILE), Math.floor(e.wy / TILE));
-    }
-    if (d < 40) {
-      // 到达 → 停留并选新目标（区域中心附近的随机偏移）
-      e.waitT = 0.6 + Math.random() * 1.8;
-      const hx = Math.floor((e.patrol.length ? e.patrol[e.pi].x : e.x) / TILE);
-      const hy = Math.floor((e.patrol.length ? e.patrol[e.pi].y : e.y) / TILE);
-      if (e.patrol.length) e.pi = (e.pi + 1) % e.patrol.length;
-      const base = e.patrol.length ? [hx, hy] : [tx, ty];
-      for (let t2 = 0; t2 < 14; t2++) {
-        const nx = base[0] + Math.floor((Math.random() - 0.5) * 14);
-        const ny = base[1] + Math.floor((Math.random() - 0.5) * 14);
-        if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
-        if (isSolidTile(gget(this.world.grid, nx, ny))) continue;
-        e.wx = nx * TILE + 16; e.wy = ny * TILE + 16; break;
+  /** 实体移动：轴分离 + 贴墙滑动 + 道具推开（与玩家一致，杜绝卡墙抖动/瞬移） */
+  private stepEntity(e: EnemyEnt, tx: number, ty: number, speed: number, dt: number): number {
+    const dx = tx - e.x, dy = ty - e.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.001) return 0;
+    const step = Math.min(speed * dt, len);
+    const vx = dx / len * step, vy = dy / len * step;
+    const r = e.r - 2;
+    const solid = (x: number, y: number) => isSolidTile(gget(this.world.grid, Math.floor(x / TILE), Math.floor(y / TILE)));
+    let x = e.x;
+    if (!solid(x + vx + Math.sign(vx) * r, e.y) && !solid(x + vx, e.y - r) && !solid(x + vx, e.y + r)) x += vx;
+    let y = e.y;
+    if (!solid(x, y + vy + Math.sign(vy) * r) && !solid(x - r, y + vy) && !solid(x + r, y + vy)) y += vy;
+    for (const pp of this.propRects) {
+      const d = Math.hypot(x - pp.x, y - pp.y);
+      const min = r + pp.r;
+      if (d < min && d > 0.001) {
+        const k = (min - d) / d;
+        x += (x - pp.x) * k; y += (y - pp.y) * k;
       }
+    }
+    const ox = e.x, oy = e.y;
+    e.x = clamp(x, 4, W * TILE - 4);
+    e.y = clamp(y, 4, H * TILE - 4);
+    return Math.hypot(e.x - ox, e.y - oy);
+  }
+
+  /** 卡住检测：连续几乎不动 → 强制换路/换目标 */
+  private trackStuck(e: EnemyEnt, moved: number, dt: number, onStuck: () => void) {
+    if (moved < 0.4) {
+      e.stuckT += dt;
+      if (e.stuckT > 0.55) { e.stuckT = 0; onStuck(); }
+    } else e.stuckT = 0;
+  }
+
+  /** 寻路到瓦片；pathOK 记录是否可达 */
+  private computePath(e: EnemyEnt, tx: number, ty: number) {
+    const ex = Math.floor(e.x / TILE), ey = Math.floor(e.y / TILE);
+    e.path = bfsWalkable(this.world.grid, t => !isSolidTile(t), ex, ey, tx, ty);
+    e.pathOK = e.path[ty * 96 + tx] !== -1;
+  }
+
+  /** 自由巡逻：沿巡逻锚点环线行走 + 驻足嗅探；无锚点时在出生点周边游荡 */
+  private aiPatrol(e: EnemyEnt, dt: number) {
+    if (e.waitT > 0) { e.waitT -= dt; return; }
+    let px: number, py: number;
+    if (e.patrol.length) {
+      px = e.patrol[e.pi].x; py = e.patrol[e.pi].y;
+    } else {
+      px = e.wx; py = e.wy;
+      const dh = Math.hypot(px - e.x, py - e.y);
+      if (dh < 30) {
+        e.waitT = 1 + Math.random() * 1.6;
+        // 出生点周边选一个随机可达点
+        for (let t = 0; t < 10; t++) {
+          const nx = Math.floor(e.home.x / TILE) + Math.floor((Math.random() - 0.5) * 10);
+          const ny = Math.floor(e.home.y / TILE) + Math.floor((Math.random() - 0.5) * 10);
+          if (nx < 1 || ny < 1 || nx >= W - 1 || ny >= H - 1) continue;
+          if (isSolidTile(gget(this.world.grid, nx, ny))) continue;
+          e.wx = nx * TILE + 16; e.wy = ny * TILE + 16; break;
+        }
+        return;
+      }
+    }
+    const dTarget = Math.hypot(px - e.x, py - e.y);
+    if (dTarget < 44) {
+      if (e.patrol.length) e.pi = (e.pi + 1) % e.patrol.length;
+      e.waitT = 0.9 + Math.random() * 1.9;
+      e.path = null; e.stuckT = 0;
       return;
     }
-    // 朝漫游点移动（优先 BFS 路径，近距直行）
-    let nx = e.wx, ny = e.wy;
+    const tx = Math.floor(px / TILE), ty = Math.floor(py / TILE);
+    e.repath -= dt;
+    if (e.repath <= 0 || !e.path) {
+      e.repath = 1.1;
+      this.computePath(e, tx, ty);
+      if (!e.pathOK) {
+        // 目标不可达 → 换下一个锚点
+        if (e.patrol.length) e.pi = (e.pi + 1) % e.patrol.length;
+        e.path = null; e.repath = 0;
+        return;
+      }
+    }
+    let nx = px, ny = py;
     if (e.path) {
-      const nxt = bfsNext(e.path, W, tx, ty, Math.floor(e.wx / TILE), Math.floor(e.wy / TILE));
+      const nxt = bfsNext(e.path, W, Math.floor(e.x / TILE), Math.floor(e.y / TILE), tx, ty);
       if (nxt) { nx = nxt[0] * TILE + 16; ny = nxt[1] * TILE + 16; }
     }
-    const dd = Math.hypot(nx - e.x, ny - e.y) || 1;
-    const mx = e.x + clamp((nx - e.x) / dd, -1, 1) * e.speed * 0.75 * dt;
-    const my = e.y + clamp((ny - e.y) / dd, -1, 1) * e.speed * 0.75 * dt;
-    const [cx, cy] = this.moveCircleFor(e, mx, my);
-    e.x = cx; e.y = cy;
+    const moved = this.stepEntity(e, nx, ny, e.speed * 0.72, dt);
+    this.trackStuck(e, moved, dt, () => {
+      e.repath = 0; e.path = null;
+      if (e.patrol.length) e.pi = (e.pi + 1) % e.patrol.length;
+    });
   }
 
   private aiChase(e: EnemyEnt, dt: number, d2p: number, sees: boolean) {
     e.repath -= dt;
-    const tx = Math.floor(this.px / TILE), ty = Math.floor(this.py / TILE);
-    const ex = Math.floor(e.x / TILE), ey = Math.floor(e.y / TILE);
-    if (e.repath <= 0) {
-      e.repath = 0.5;
-      e.path = bfsWalkable(this.world.grid, (t) => !isSolidTile(t), ex, ey, tx, ty);
+    const dist = Math.sqrt(d2p);
+    // 近身 → 攻击
+    if (sees && d2p < 52 * 52 && e.cool <= 0) { e.state = 'attack'; e.actT = 0; return; }
+    // 脱战：丢失视野/超距 → 回巡逻
+    if ((!sees && e.alert <= 0) || dist > 560) { this.returnToPatrol(e); return; }
+    const ptx = Math.floor(this.px / TILE), pty = Math.floor(this.py / TILE);
+    if (e.repath <= 0 || !e.path) {
+      e.repath = 0.55;
+      this.computePath(e, ptx, pty);
     }
-    if (d2p < 54 * 54 && sees && e.cool <= 0) {
-      e.state = 'attack'; e.actT = 0; return;
+    // 近距离且视线通畅 → 直线追击（更自然）
+    if (sees && dist < 280) {
+      const moved = this.stepEntity(e, this.px, this.py, e.speed * (dist > 180 ? 1.18 : 1.05), dt);
+      this.trackStuck(e, moved, dt, () => { e.repath = 0; });
+      return;
     }
-    if (!sees && e.alert <= 0 || Math.sqrt(d2p) > 700) {
-      e.state = 'patrol'; e.repath = 0; e.path = null; e.wx = e.x; e.wy = e.y; return;
+    if (e.path && e.pathOK) {
+      const nxt = bfsNext(e.path, W, Math.floor(e.x / TILE), Math.floor(e.y / TILE), ptx, pty);
+      if (nxt) {
+        const moved = this.stepEntity(e, nxt[0] * TILE + 16, nxt[1] * TILE + 16, e.speed * (dist > 280 ? 1.25 : 1), dt);
+        this.trackStuck(e, moved, dt, () => { e.repath = 0; e.path = null; });
+        return;
+      }
     }
-    let nx = this.px, ny = this.py;
-    if (e.path) {
-      const nxt = bfsNext(e.path, 96, ex, ey, tx, ty);
-      if (nxt) { nx = nxt[0] * TILE + 16; ny = nxt[1] * TILE + 16; }
-    }
-    const d = Math.hypot(nx - e.x, ny - e.y) || 1;
-    // 近距离直接冲
-    const directD = Math.sqrt(d2p);
-    if (directD < 160) { nx = this.px; ny = this.py; }
-    const sp = e.speed * (directD > 300 ? 1.25 : 1);
-    const mx = e.x + clamp((nx - e.x) / d, -1, 1) * sp * dt;
-    const my = e.y + clamp((ny - e.y) / d, -1, 1) * sp * dt;
-    const [cx, cy] = this.moveCircleFor(e, mx, my);
-    e.x = cx; e.y = cy;
+    // 无路可走但有视野 → 直线逼近；否则放弃
+    if (sees) {
+      const moved = this.stepEntity(e, this.px, this.py, e.speed, dt);
+      this.trackStuck(e, moved, dt, () => { this.returnToPatrol(e); });
+    } else this.returnToPatrol(e);
   }
 
-  private aiAttack(e: EnemyEnt, dt: number, d2p: number) {
+  /** 失败回退：选最近巡逻锚点，平滑归位 */
+  private returnToPatrol(e: EnemyEnt) {
+    e.state = 'patrol'; e.path = null; e.repath = 0; e.stuckT = 0; e.cool = Math.max(e.cool, 0.4);
+    if (e.patrol.length) {
+      let bi = 0, bd = Infinity;
+      for (let i = 0; i < e.patrol.length; i++) {
+        const d = dist2(e.x, e.y, e.patrol[i].x, e.patrol[i].y);
+        if (d < bd) { bd = d; bi = i; }
+      }
+      e.pi = bi;
+    } else { e.wx = e.home.x; e.wy = e.home.y; }
+  }
+
+  private aiAttack(e: EnemyEnt, dt: number, d2p: number, sees: boolean) {
     e.actT += dt;
     if (e.actT < 0.42) {
       // 前摇：面向玩家，身体下压
       e.sprite.body.y = Math.sin(e.actT / 0.42 * Math.PI) * 1.6;
       e.sprite.head.y = -2 - e.actT * 6;
       if (e.actT > 0.05 && e.actT - dt <= 0.05) sfx.roar();
+      // 目标跑了 → 放弃攻击
+      if (!sees && d2p > 120 * 120) { e.state = 'chase'; e.repath = 0; e.cool = 0.3; e.sprite.body.y = 0; }
     } else if (e.actT < 0.62) {
-      // 扑咬
+      // 扑咬（带碰撞，不会穿墙）
       const ang = Math.atan2(this.py - e.y, this.px - e.x);
-      e.x += Math.cos(ang) * 300 * dt; e.y += Math.sin(ang) * 300 * dt;
+      this.stepEntity(e, e.x + Math.cos(ang) * 90, e.y + Math.sin(ang) * 90, 330, dt);
       if (d2p < 62 * 62 && this.invuln <= 0) this.hurtPlayer(e.elite ? 20 : 12, e);
     } else {
-      e.state = 'chase'; e.cool = e.elite ? 0.9 : 1.25; e.repath = 0; e.sprite.body.y = 0;
+      e.state = 'chase'; e.cool = e.elite ? 0.9 : 1.3; e.repath = 0; e.sprite.body.y = 0;
     }
-  }
-
-  private moveCircleFor(e: EnemyEnt, nx: number, ny: number): [number, number] {
-    const solid = (x: number, y: number) => isSolidTile(gget(this.world.grid, Math.floor(x / TILE), Math.floor(y / TILE)));
-    let x = nx;
-    if (solid(x - e.r, e.y) || solid(x + e.r, e.y)) x = e.x;
-    let y = ny;
-    if (solid(x, y - e.r) || solid(x, y + e.r)) y = e.y;
-    return [x, y];
   }
 
   private hurtPlayer(dmg: number, from?: EnemyEnt) {
@@ -602,9 +670,7 @@ export class Game {
       p.t += dt;
       const d = Math.hypot(p.def.x - this.px, p.def.y - this.py);
       pulsePickup(p.sprite, p.t, d < 60);
-      const def = ITEMS[p.def.item];
-      const auto = ['cloth', 'bolt', 'wire', 'canfood', 'cell', 'ammo', 'can', 'titanium', 'antir', 'sigcell'];
-      if (auto.includes(p.def.item)) {
+      if (AUTO_PICK.includes(p.def.item)) {
         if (d < 46) { this.pick(p); continue; }
       }
     }
@@ -614,8 +680,7 @@ export class Game {
     for (const p of this.pickups) {
       if (p.taken) continue;
       const def = ITEMS[p.def.item];
-      const auto = ['cloth', 'bolt', 'wire', 'canfood', 'cell', 'ammo', 'can', 'titanium', 'antir', 'sigcell'];
-      if (auto.includes(p.def.item)) continue;
+      if (AUTO_PICK.includes(p.def.item)) continue;
       const d = Math.hypot(p.def.x - this.px, p.def.y - this.py);
       if (d < 44 && d < best) { best = d; this.nearInteractPickup = p; this.hud.prompt(`E · 拾取「${def.name}」`); }
     }
@@ -902,9 +967,9 @@ export class Game {
         this.rc.objLayer.addChild(sprite.c);
         this.enemies.push({
           x, y, hp: 90, maxHp: 90, r: 13, elite: false, speed: 150, state: 'chase',
-          patrol: [], pi: 0, alert: 6, t: 0, actT: 0, cool: 0, repath: 0, path: null, pathT: 0,
-          hitT: 0, sprite, zone: Z.CEN, barkT: 1, telegraph: new Graphics(), eliteGlow: new Graphics(),
-          wanderT: 0, wx: x, wy: y, waitT: 0,
+          patrol: [], pi: 0, alert: 6, t: 0, actT: 0, cool: 0, repath: 0, path: null, pathOK: false,
+          hitT: 0, sprite, zone: Z.CEN, barkT: 1,
+          wx: x, wy: y, waitT: 0, stuckT: 0, home: { x, y },
         });
       }
       this.alarmNearby(this.px, this.py, 999);
@@ -919,23 +984,34 @@ export class Game {
   }
   private eventDoneFlag = false;
 
-  // ---------- 光效 ----------
+  // ---------- 光效（30Hz 节流，静态光源不逐帧重绘） ----------
+  private lightAcc = 1;
   private updateLights(dt: number) {
-    this.rc.renderLight(this.px, this.py, this.aim, this.darkness(), this.darkColor(),
-      [...this.world.lamps, ...this.lights], this.flashOn, dt);
     for (let i = this.lights.length - 1; i >= 0; i--) {
       this.lights[i].ttl -= dt;
       if (this.lights[i].ttl <= 0) this.lights.splice(i, 1);
     }
+    this.lightAcc += dt;
+    if (this.lightAcc < 1 / 30) return;
+    this.lightAcc = 0;
+    const lamps = this.world.lamps.length + this.lights.length;
+    if (lamps) {
+      const arr = new Array<{ x: number; y: number; r: number; a?: number }>(lamps);
+      let i = 0;
+      for (const l of this.world.lamps) arr[i++] = l;
+      for (const l of this.lights) arr[i++] = l;
+      this.rc.renderLight(this.px, this.py, this.aim, this.darkness(), this.darkColor(), arr, this.flashOn, dt);
+    } else this.rc.renderLight(this.px, this.py, this.aim, this.darkness(), this.darkColor(), [], this.flashOn, dt);
   }
   private flashOn = false;
   private toggleFlash() { this.flashOn = !this.flashOn; }
   private darkness() {
     const phase = (this.time % 900) / 900;
-    const dark = 0.24 + 0.3 * clamp((phase - 0.35) / 0.65, 0, 1);
+    const dark = 0.18 + 0.22 * clamp((phase - 0.4) / 0.6, 0, 1);
     const z = ZONES[this.zoneNow]?.dark ?? 0;
-    const metro = this.zoneNow === Z.MET ? 0.18 : 0;
-    return clamp(dark + z + metro + (this.eventT >= 0 ? 0.1 : 0), 0.12, 0.86);
+    const metro = this.zoneNow === Z.MET ? 0.16 : 0;
+    // 上限 0.46：即使身处无灯区也保留可见度
+    return clamp(dark + z + metro + (this.eventT >= 0 ? 0.08 : 0), 0.1, 0.46);
   }
   private darkColor() {
     const phase = (this.time % 900) / 900;
@@ -983,14 +1059,20 @@ export class Game {
     if (tx < 0 || ty < 0 || tx >= 96 || ty >= 96) return Z.NONE;
     return this.world.zoneId[ty * 96 + tx];
   }
+  private zoneHintT = 0;
   private renderHud() {
     const z = this.zoneAt();
     if (z !== this.zoneNow) {
       this.zoneNow = z;
       this.hud.zone(ZONES[z]?.name ?? '旧城郊野');
       if (z === Z.MET) this.hud.toast('手电筒已自动打开（F 切换）', 'info');
+      if (z === Z.NONE && this.zoneHintT <= 0) {
+        this.zoneHintT = 18;
+        this.hud.toast('荒野无人区——路灯尽头才是旧城，沿道路返回。', 'info');
+      }
       this.refreshBeaconBeam();
     }
+    this.zoneHintT = Math.max(0, this.zoneHintT - 1 / 30);
     this.hud.hudTick(this.st, this.save);
     // 小地图探明
   }
@@ -1035,8 +1117,6 @@ export class Game {
   /** 供 HUD 点击菜单 */
   menuButton() { this.openMenu(); }
   setDead() { this.dead = true; }
-  // 死亡姿势
-  private die2() {}
   private useSlot(i: number) {
     const s = this.st.slots[i];
     if (!s) return;

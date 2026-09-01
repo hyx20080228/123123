@@ -23,6 +23,7 @@ function tileBaseColor(id: number): number {
     case T.MET_F: return 0x2f5a66; case T.MET_W: return 0x3d4a58;
     case T.RAD_F: return 0x6a5a72; case T.RAD_W: return 0x574760;
     case T.CEL_F: return 0x7a6a52; case T.CEL_W: return 0x4a3f38;
+    case T.HEDGE: return 0x2c4526;
     default: return 0x888888;
   }
 }
@@ -51,6 +52,28 @@ function paintWall(g: Graphics, x: number, y: number, id: number, belowIsFloor: 
   const r = hash2(x, y, 9);
   if (r < 0.4) g.moveTo(px + 10, py + 19).lineTo(px + 10, py + 31).stroke({ width: 1, color: 0x000000, alpha: 0.15 });
   else if (r < 0.7) g.moveTo(px + 22, py + 19).lineTo(px + 22, py + 31).stroke({ width: 1, color: 0x000000, alpha: 0.15 });
+}
+
+/** 灌木墙：浓密树篱（地图边界） */
+function paintHedge(g: Graphics, x: number, y: number) {
+  const px = x * TILE, py = y * TILE;
+  const r = hash2(x, y, 5);
+  // 底层深土
+  g.rect(px, py, TILE, TILE).fill(0x1f3018);
+  // 三丛灌木错落（伪 3D：上亮下暗）
+  const blobs: [number, number, number][] = [
+    [8 + r * 8, 10, 12], [22 - r * 6, 14, 13], [14 + r * 12, 22, 11],
+  ];
+  for (const [cx, cy, rad] of blobs) {
+    g.circle(px + cx, py + cy + 2, rad).fill(0x24401e);
+    g.circle(px + cx, py + cy, rad).fill(r > .5 ? 0x35592b : 0x3d6330).stroke({ width: 1.8, color: 0x1a2e14 });
+    g.ellipse(px + cx - rad * .25, py + cy - rad * .3, rad * .4, rad * .22).fill({ color: 0x5a8040, alpha: .5 });
+  }
+  // 野花/高光
+  if (r < 0.4) g.circle(px + 6 + r * 20, py + 6 + r * 6, 1.4).fill({ color: 0xc9d88a, alpha: .8 });
+  else if (r > 0.8) g.circle(px + 8 + r * 12, py + 20, 1.8).fill({ color: 0xd8615a, alpha: .75 });
+  // 底边投影
+  if (hash2(x, y, 11) < 0.85) g.rect(px, py + TILE - 3, TILE, 3).fill({ color: 0x101a0c, alpha: .5 });
 }
 
 function paintDecor(g: Graphics, id: number, x: number, y: number) {
@@ -106,6 +129,7 @@ export class RendererCtx {
   private gradTex!: Texture;
   private coneTex!: Texture;
   private camera = { x: 0, y: 0, shake: 0, shakeX: 0, shakeY: 0 };
+  private lightPool: Sprite[] = [];
 
   private settings: { lightFx: boolean; shake?: boolean };
   constructor(private app: Application, private world: World, settings: { lightFx: boolean; shake?: boolean } = { lightFx: true }) {
@@ -115,6 +139,8 @@ export class RendererCtx {
     this.objLayer.sortableChildren = true;
     this.fxLayer.sortableChildren = true;
     app.stage.addChild(this.tileLayer, this.objLayer, this.fxLayer);
+    // 色彩分级：整体提升饱和/对比，暖色电影感（DOM filter，零每帧开销）
+    try { (app.canvas as HTMLCanvasElement).style.filter = 'saturate(1.08) contrast(1.05) brightness(1.02)'; } catch { /* ignore */ }
     window.addEventListener('resize', () => this.resizeLight());
     this.resizeLight();
     // 初始渲染一次光影，避免首帧黑屏
@@ -135,7 +161,9 @@ export class RendererCtx {
         const r = hash2(x, y, 7);
         const below = gget(grid, x, y + 1);
         const belowIsFloor = !isSolidTile(below);
-        if (isSolidTile(id)) {
+        if (id === T.HEDGE) {
+          paintHedge(g, x, y);
+        } else if (isSolidTile(id)) {
           paintWall(g, x, y, id, belowIsFloor);
         } else {
           const base = tileBaseColor(id);
@@ -206,28 +234,38 @@ export class RendererCtx {
     if (!this.settings.lightFx) { if (this.overlay) this.overlay.visible = false; return; }
     try {
       const sx = this.app.screen.width / 2, sy = this.app.screen.height / 2;
-      this.lightC.removeChildren();
       const darkRect = new Graphics();
-      darkRect.rect(0, 0, this.app.screen.width, this.app.screen.height).fill({ color: tint, alpha: Math.min(0.6, dark) });
+      darkRect.rect(0, 0, this.app.screen.width, this.app.screen.height).fill({ color: tint, alpha: Math.min(0.5, dark) });
       this.lightC.addChild(darkRect);
+      // 复用池中 Sprite，避免每帧 GC
       const add = (wx: number, wy: number, r: number, a: number) => {
-        const s = new Sprite(this.gradTex);
+        const s = this.lightPool.pop() ?? new Sprite(this.gradTex);
+        s.texture = this.gradTex;
+        s.visible = true;
         s.position.set(wx - this.camera.x + sx, wy - this.camera.y + sy);
         s.blendMode = 'erase';
         s.scale.set(r / 128 * (a || 1));
         this.lightC.addChild(s);
       };
-      add(px, py, flashlight ? 300 : 265, 1);
+      add(px, py, flashlight ? 320 : 285, 1);
       for (const l of lights) add(l.x, l.y, l.r, l.a ?? 1);
+      const cone = this.lightPool.pop() ?? new Sprite(this.coneTex);
+      cone.texture = this.coneTex;
+      cone.visible = flashlight;
       if (flashlight) {
-        const cone = new Sprite(this.coneTex);
         cone.position.set(px - this.camera.x + sx, py - this.camera.y + sy);
         cone.rotation = aim;
         cone.blendMode = 'erase';
-        cone.scale.set(3.2, 3.2);
-        this.lightC.addChild(cone);
+        cone.scale.set(3.4, 3.4);
       }
+      this.lightC.addChild(cone);
       this.app.renderer.render({ container: this.lightC, target: this.lightRT });
+      // 回收
+      for (let i = this.lightC.children.length - 1; i >= 0; i--) {
+        const ch = this.lightC.children[i];
+        if (ch !== darkRect) { this.lightC.removeChild(ch); if ((ch as Sprite).texture) this.lightPool.push(ch as Sprite); }
+        else { this.lightC.removeChild(ch); ch.destroy(); }
+      }
       this.overlay.visible = true;
     } catch { if (this.overlay) this.overlay.visible = false; }
   }

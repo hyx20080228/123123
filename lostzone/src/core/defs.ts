@@ -33,7 +33,7 @@ export interface ItemDef {
 export const ITEMS: Record<string, ItemDef> = {
   // ---- 武器 ----
   cleaver: { id:'cleaver', name:'砍肉刀', kind:'melee', icon:'🔪', color:'#ff4fa0',
-    desc:'居民区杂货铺的旧砍刀。挥砍时发出让人安心的风声。', value:30, stack:1, dmg:66, rate:2.4, range:80, meleeArc:1.6 },
+    desc:'居民区杂货铺的旧砍刀。挥砍时发出让人安心的风声。', value:30, stack:1, dmg:66, rate:3.6, range:80, meleeArc:1.6 },
   p9: { id:'p9', name:'P9 手枪', kind:'gun', icon:'🔫', color:'#ff4a3c',
     desc:'老式警用手枪，稳定可靠。', value:120, stack:1, dmg:26, rate:5, range:640, mag:12, spread:0.03, reload:1.0 },
   smg: { id:'smg', name:'拾荒者冲锋枪', kind:'gun', icon:'⚡', color:'#ff4a3c',
