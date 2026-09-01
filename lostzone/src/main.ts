@@ -1,10 +1,12 @@
 // ============ 入口 ============
-import { Application } from 'pixi.js';
+import { Application, Assets, Texture } from 'pixi.js';
+import charSheetUrl from './assets/char-sheet.png';
 import { generateWorld } from './world/mapgen';
 import { loadSave, storeSave, charById } from './game/state';
 import { Ui } from './ui/ui';
 import { Game } from './game/game';
 import { sfx } from './audio/sfx';
+import { setCharSheet } from './render/art';
 
 // 全局错误可见化：运行期任何异常都会显示错误面板
 function installGlobalErrorUi() {
@@ -45,6 +47,12 @@ async function boot() {
     powerPreference: 'high-performance',
   });
   document.getElementById('app')!.appendChild(app.canvas);
+
+  // 角色测试贴图（2x2 素材表）——失败时自动回退到矢量角色
+  try {
+    const sheet = await Assets.load<Texture>(charSheetUrl);
+    setCharSheet(sheet);
+  } catch (e) { console.warn('[LostZone] 贴图加载失败，使用矢量角色:', e); }
 
   const save = loadSave();
   // app 传入 Ui：大厅底层为吃鸡风动态 Pixi 预览（黄昏城市剪影 + 角色立绘）

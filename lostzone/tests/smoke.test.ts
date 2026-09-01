@@ -94,6 +94,16 @@ describe('旧城区地图', () => {
     }
   });
 
+  test('地图确定性：两次生成逐字节一致（每次进入都是同一张图）', () => {
+    const a = generateWorld(), b = generateWorld();
+    expect(Buffer.from(a.grid.cells).equals(Buffer.from(b.grid.cells))).toBe(true);
+    expect(Buffer.from(a.zoneId).equals(Buffer.from(b.zoneId))).toBe(true);
+    expect(a.pickups.map(p => `${p.item}:${p.x},${p.y}`).join('|')).toBe(
+      b.pickups.map(p => `${p.item}:${p.x},${p.y}`).join('|'));
+    expect(a.props.map(p => `${p.kind}:${p.x},${p.y}`).join('|')).toBe(
+      b.props.map(p => `${p.kind}:${p.x},${p.y}`).join('|'));
+  });
+
   test('资源/敌人全部合法：不在墙上、不在荒野、巡逻点不压道具', () => {
     const w = generateWorld();
     for (const p of w.pickups) {

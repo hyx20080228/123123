@@ -7,7 +7,8 @@ import { ITEMS, LORE, SaveData, CharDef, Settings, DEFAULT_SETTINGS } from '../c
 import { newRun, RunState, addSlot, addBag, bagCount, autoLoadout, storeSave } from './state';
 import { RendererCtx } from '../render/renderer';
 import { createCharSprite, poseChar, CharSprite, createHoundSprite, poseHound, HoundSprite,
-  makeWeapon, makeProp, makePickupSprite, pulsePickup, PickupSprite, makeExtractSprite, makeDoorSprite } from '../render/art';
+  makeWeapon, makeProp, makePickupSprite, pulsePickup, PickupSprite, makeExtractSprite, makeDoorSprite,
+  makeDoorLabel } from '../render/art';
 import { Particles } from '../render/particles';
 import { sfx } from '../audio/sfx';
 
@@ -41,6 +42,7 @@ interface EnemyEnt {
   t: number; actT: number; cool: number; repath: number; path: Int32Array | null; pathOK: boolean;
   hitT: number; sprite: HoundSprite; zone: number; barkT: number;
   wx: number; wy: number; waitT: number; stuckT: number; home: { x: number; y: number };
+  dieT: number;
 }
 interface LightPulse { x: number; y: number; r: number; a: number; ttl: number }
 
@@ -62,6 +64,7 @@ export class Game {
   private pickups: PickupEnt[] = [];
   private doors: DoorEnt[] = [];
   private propRects: { x: number; y: number; r: number }[] = [];
+  private doorLabels: { door: DoorEnt; label: Container }[] = [];
   private propsC: Container[] = [];
   private lights: LightPulse[] = [];
   private beacon: ReturnType<typeof makeExtractSprite>;
@@ -105,9 +108,13 @@ export class Game {
       let node: Container = c;
       try {
         // 静态道具烘焙为单张纹理 Sprite：大幅降低 draw call 与内存
+        // 关键：纹理按 local bounds 生成，中心必须用 bounds 中心修正，否则家具整体偏移嵌墙
         const tex = this.app.renderer.generateTexture({ target: c, clearColor: '#00000000', antialias: true });
         const ss = new Sprite(tex);
+        const b = c.getLocalBounds();
+        const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
         ss.anchor.set(0.5);
+        ss.position.set(p.x + cx, p.y + cy);
         node = ss;
         c.destroy({ children: true });
       } catch { /* 无渲染器（测试/回退）时保留 Graphics */ }
@@ -124,6 +131,9 @@ export class Game {
       this.rc.objLayer.addChild(sprite);
       this.doors.push({ ...d, sprite, x: d.tx * TILE, y: d.ty * TILE, open: d.open });
       if (!d.open) this.lockSolid(d.tx, d.ty, true);
+      // 门的世界内标签：靠近时显示「名称 + 锁」，不再让人猜哪些能进
+      const label = makeDoorLabel(d.name, d.kind);
+      if (label) { label.visible = false; this.rc.objLayer.addChild(label); this.doorLabels.push({ door: this.doors[this.doors.length - 1], label }); }
     }
     for (const pk of w.pickups) {
       const def = ITEMS[pk.item];
@@ -144,7 +154,7 @@ export class Game {
         elite: e.elite, speed: e.elite ? 150 : 126, state: 'patrol', patrol: e.patrol,
         pi: 0, alert: 0, t: Math.random() * 10, actT: 0, cool: 0, repath: 0, path: null, pathOK: false,
         hitT: 0, sprite, zone: e.zone, barkT: 0,
-        wx: e.x, wy: e.y, waitT: 0, stuckT: 0, home: { x: e.x, y: e.y },
+        wx: e.x, wy: e.y, waitT: 0, stuckT: 0, home: { x: e.x, y: e.y }, dieT: 0,
       });
     }
     this.beacon.c.position.set(w.extraction.x, w.extraction.y);
@@ -206,6 +216,7 @@ export class Game {
     this.updateEnemies(dt);
     this.updatePickups(dt);
     this.updateInteract(dt);
+    this.updateDoorLabels(dt);
     this.updateExtraction(dt);
     this.updateEvent(dt);
     this.updateLights(dt);
@@ -248,6 +259,11 @@ export class Game {
         const recoil = this.fireT > 0 ? this.fireT * 30 : 0;
         w.y = -recoil;
         if (this.reloadT > 0) w.rotation = (this.slotIdx % 2 ? 1 : -1) * 0.9 * Math.min(1, this.reloadT);
+      } else if (def.kind === 'melee' && this.meleeT <= 0) {
+        // 近战待机：刀斜握在身侧（挥砍时由 poseChar 接管）
+        const flip = this.pSprite.c.scale.x < 0;
+        this.pSprite.weapon.rotation = (flip ? Math.PI - this.aim : this.aim) + (flip ? 1 : -1) * 1.05;
+        this.pSprite.weapon.y = 12;
       }
     }
     // 计时器
@@ -413,11 +429,18 @@ export class Game {
     if (e.hp <= 0) this.killEnemy(e);
   }
   private killEnemy(e: EnemyEnt) {
-    e.state = 'dead'; e.actT = 0;
+    e.state = 'dead'; e.actT = 0; e.dieT = 0;
     if (this.settings.shake) this.rc.addShake(0.22);
     sfx.dogDie();
-    this.particles.spawn(e.x, e.y, { n: 14, color: 0xffa04a, speed: 220, life: .5, size: 3, grav: 340 });
-    this.particles.spawn(e.x, e.y, { n: 6, color: 0x9aa4ac, speed: 130, life: .4, size: 2.4, grav: 300 });
+    // 血泊（永久留在地面）+ 红色血雾
+    const blood = new Graphics();
+    blood.circle(0, 0, 9 + Math.random() * 3).fill({ color: 0x7a1f1a, alpha: 0.62 });
+    blood.circle((Math.random() - .5) * 16, 6, 5 + Math.random() * 3).fill({ color: 0x6b1a16, alpha: 0.5 });
+    blood.circle((Math.random() - .5) * 18, -6, 4).fill({ color: 0x8a2a20, alpha: 0.45 });
+    blood.position.set(e.x, e.y + 6); blood.zIndex = e.y - 1;
+    this.rc.objLayer.addChild(blood);
+    this.particles.spawn(e.x, e.y, { n: 14, color: 0xc22f22, speed: 200, life: .55, size: 3, grav: 300 });
+    this.particles.spawn(e.x, e.y - 6, { n: 8, color: 0xe06a4a, speed: 120, life: .45, size: 2.2, grav: 220 });
     // 掉落
     const drops = e.elite ? ['bolt', 'ammo', 'titanium'] : ['cloth', 'bolt', 'cell'];
     for (const it of drops) {
@@ -443,7 +466,15 @@ export class Game {
   // ---------- 锈犬 AI ----------
   private updateEnemies(dt: number) {
     for (const e of this.enemies) {
-      if (e.state === 'dead') { poseHound(e.sprite, e.t, false, 0, true); e.sprite.c.position.set(e.x, e.y); continue; }
+      if (e.state === 'dead') {
+        e.dieT += dt;
+        poseHound(e.sprite, e.t, false, 0, true);
+        e.sprite.c.position.set(e.x, e.y);
+        // 渐隐 + 死前短暂抽搐，避免"一刀死得干干脆脆"
+        e.sprite.c.alpha = e.dieT < 0.6 ? 0.95 - e.dieT * 0.2 : 0.82;
+        if (e.dieT < 0.6) e.sprite.c.rotation += Math.sin(e.t * 42) * 0.05 * (1 - e.dieT / 0.6);
+        continue;
+      }
       e.t += dt;
       e.hitT = Math.max(0, e.hitT - dt);
       e.cool = Math.max(0, e.cool - dt);
@@ -665,13 +696,19 @@ export class Game {
 
   // ---------- 拾取 ----------
   private updatePickups(dt: number) {
+    this.autoHintD = Infinity; this.autoHint = '';
     for (const p of this.pickups) {
       if (p.taken) continue;
       p.t += dt;
       const d = Math.hypot(p.def.x - this.px, p.def.y - this.py);
       pulsePickup(p.sprite, p.t, d < 60);
       if (AUTO_PICK.includes(p.def.item)) {
-        if (d < 46) { this.pick(p); continue; }
+        if (d < 52) { this.pick(p); continue; }
+        // 靠近但不触发：显示材料名，玩家知道地上有东西
+        if (d < 110 && d < this.autoHintD) {
+          this.autoHintD = d;
+          this.autoHint = `${p.def.count ?? 1}× ${ITEMS[p.def.item]?.name ?? p.def.item}`;
+        }
       }
     }
     // 最近的可交互拾取物（按 E）
@@ -682,11 +719,19 @@ export class Game {
       const def = ITEMS[p.def.item];
       if (AUTO_PICK.includes(p.def.item)) continue;
       const d = Math.hypot(p.def.x - this.px, p.def.y - this.py);
-      if (d < 44 && d < best) { best = d; this.nearInteractPickup = p; this.hud.prompt(`E · 拾取「${def.name}」`); }
+      if (d < 44 && d < best) { best = d; this.nearInteractPickup = p; }
     }
-    if (!this.nearInteractPickup && !this.nearInteract) this.hud.prompt(null);
   }
   private nearInteractPickup: PickupEnt | null = null;
+  private updateDoorLabels(dt: number) {
+    for (const dl of this.doorLabels) {
+      const d = dl.door;
+      if (d.open) { dl.label.visible = false; continue; }
+      const dist = Math.hypot(d.x + 16 - this.px, d.y + 16 - this.py);
+      dl.label.visible = dist < 260;
+      if (dl.label.visible) dl.label.y = -30 + Math.sin(this.time * 2.2 + d.x) * 2.5;
+    }
+  }
 
   private pick(p: PickupEnt) {
     const { item, count } = p.def;
@@ -740,16 +785,29 @@ export class Game {
   }
 
   // ---------- 交互 ----------
+  private autoHint = ''; private autoHintD = Infinity;
   private updateInteract(dt: number) {
-    if (this.nearInteractPickup) return;
+    // 交互目标永远优先计算（材料提示不能抢占门/箱子/信标）
     this.nearInteract = null;
     let best = Infinity;
     for (const it of this.world.interacts) {
       const d = Math.hypot(it.x - this.px, it.y - this.py);
       if (d < it.r && d < best) { best = d; this.nearInteract = it; }
     }
-    if (this.nearInteract) this.hud.prompt(`E · ${this.nearInteract.label}`);
-    else if (!this.nearInteractPickup) this.hud.prompt(null);
+    if (this.nearInteractPickup) {
+      const def = ITEMS[this.nearInteractPickup.def.item];
+      this.hud.prompt(`E · 拾取「${def.name}」`);
+      return;
+    }
+    if (this.nearInteract) {
+      this.hud.prompt(`E · ${this.nearInteract.label}`);
+      return;
+    }
+    if (this.autoHintD < Infinity) {
+      this.hud.prompt(`✦ ${this.autoHint}（走近自动拾取）`);
+      return;
+    }
+    this.hud.prompt(null);
   }
   private tryInteract() {
     this.hitIntercept?.();
@@ -969,7 +1027,7 @@ export class Game {
           x, y, hp: 90, maxHp: 90, r: 13, elite: false, speed: 150, state: 'chase',
           patrol: [], pi: 0, alert: 6, t: 0, actT: 0, cool: 0, repath: 0, path: null, pathOK: false,
           hitT: 0, sprite, zone: Z.CEN, barkT: 1,
-          wx: x, wy: y, waitT: 0, stuckT: 0, home: { x, y },
+          wx: x, wy: y, waitT: 0, stuckT: 0, home: { x, y }, dieT: 0,
         });
       }
       this.alarmNearby(this.px, this.py, 999);
@@ -1015,9 +1073,9 @@ export class Game {
   }
   private darkColor() {
     const phase = (this.time % 900) / 900;
-    if (phase < 0.4) return 0x16273a;
-    if (phase < 0.75) return 0x241a33;
-    return 0x0e1220;
+    if (phase < 0.4) return 0x15181f;
+    if (phase < 0.75) return 0x1a161c;
+    return 0x101116;
   }
 
   // ---------- 特效 ----------

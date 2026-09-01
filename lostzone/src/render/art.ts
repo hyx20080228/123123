@@ -1,5 +1,5 @@
 // ============ 程序化矢量美术 v2：精细角色 / 锈犬 / 武器 / 道具 ============
-import { Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Container, Graphics, Sprite, Text, TextStyle, Texture, Rectangle } from 'pixi.js';
 import { CharDef } from '../core/defs';
 import { TAU } from '../core/util';
 
@@ -22,9 +22,44 @@ export interface CharSprite {
   legL: Graphics; legR: Graphics; armL: Graphics; armR: Graphics;
   tail: Graphics; weapon: Container; pack: Graphics; scarf: Graphics;
   shadow: Graphics; weaponFx: Graphics;
+  sheetSpr?: Sprite;
+}
+
+// ---------- 测试贴图模式：外部角色贴图（2x2 表） ----------
+let charSheet: Texture | null = null;
+const SHEET_IDX: Record<string, number> = { cat: 0, rabbit: 1, raccoon: 2, fowl: 3 };
+export function setCharSheet(tex: Texture | null) { charSheet = tex; }
+export function hasCharSheet() { return !!charSheet; }
+
+function makeSheetChar(char: CharDef): CharSprite {
+  const c = new Container();
+  const idx = SHEET_IDX[char.id] ?? 0;
+  // 贴图表自适应网格：横版 4列×2行，方版 2×2
+  const cols = charSheet!.width >= charSheet!.height ? 4 : 2;
+  const tw = charSheet!.width / cols, th = charSheet!.height / 2;
+  const frame = new Rectangle((idx % cols) * tw, Math.floor(idx / cols) * th, tw, th);
+  const fr = new Texture({ source: charSheet!.source, frame });
+  const spr = new Sprite(fr);
+  const BASE = 62 / Math.max(tw, th);
+  spr.anchor.set(0.5, 0.62);
+  spr.scale.set(BASE);
+  spr.zIndex = 0;
+  const shadow = g().ellipse(0, 27, 20, 7).fill({ color: 0x000000, alpha: 0.28 });
+  shadow.zIndex = -1;
+  c.addChild(shadow, spr);
+  const empty = () => new Graphics();
+  const emptyC = () => new Container();
+  const base: CharSprite = {
+    c, char, body: empty(), head: empty(), earL: empty(), earR: empty(),
+    legL: empty(), legR: empty(), armL: empty(), armR: empty(),
+    tail: empty(), weapon: emptyC(), pack: empty(), scarf: empty(),
+    shadow, weaponFx: empty(), sheetSpr: spr,
+  };
+  return base;
 }
 
 export function createCharSprite(char: CharDef): CharSprite {
+  if (charSheet) return makeSheetChar(char);
   const c = new Container();
   const shadow = g().ellipse(0, 22, 21, 8).fill({ color: 0x000000, alpha: 0.3 });
   shadow.zIndex = -2;
@@ -179,6 +214,22 @@ export function poseChar(s: CharSprite, walkT: number, moving: boolean, aimAng: 
   const freq = sprint ? 15 : 10.5;
   const sw = moving ? Math.sin(walkT * freq) : 0;
   const bob = moving ? Math.abs(Math.sin(walkT * freq)) * 2.6 : Math.sin(walkT * 1.6) * 0.8;
+  // ---- 贴图模式：整体变换模拟动画（试玩测试用） ----
+  if (s.sheetSpr) {
+    const base = Math.abs(s.sheetSpr.scale.x);
+    const flip = Math.cos(aimAng) < -0.1;
+    s.sheetSpr.scale.set(flip ? -base : base, base);
+    s.sheetSpr.position.y = -bob;
+    s.sheetSpr.rotation = moving ? sw * 0.1 : Math.sin(walkT * 1.4) * 0.025;
+    if (attackT > 0) {
+      const k = attackT;
+      s.sheetSpr.rotation += (flip ? -1 : 1) * (k * 1.5 - 0.75) * 0.5;
+      s.sheetSpr.position.y -= Math.sin(k * Math.PI) * 7;
+    }
+    const flash = hitT > 0 ? Math.min(1, hitT * 8) : 0;
+    s.sheetSpr.tint = flash > 0 ? 0xff9a8a : 0xffffff;
+    return;
+  }
   s.c.position.y = -bob;
   s.legL.y = sw * 4; s.legR.y = -sw * 4;
   s.legL.rotation = sw * 0.4; s.legR.rotation = -sw * 0.4;
@@ -199,11 +250,31 @@ export function poseChar(s: CharSprite, walkT: number, moving: boolean, aimAng: 
   s.weapon.position.set(flip ? -17 : 17, 5);
   s.weapon.rotation = flip ? Math.PI - a : a;
   s.weapon.scale.x = flip ? -1 : 1;
-  // 挥砍动画：武器从后往前扫
+  // 挥砍动画：身体扭转 → 手臂抡圆 → 武器画弧（先蓄力后发力，结尾回弹）
   if (attackT > 0) {
-    const sw2 = Math.sin(attackT * Math.PI);
-    s.weapon.rotation += (flip ? -1 : 1) * (attackT * 2.4 - 1.2) * 1.5;
-    s.weapon.y = -sw2 * 10;
+    const t = attackT;                       // 0..1
+    const sw2 = Math.sin(t * Math.PI);       // 弧线包络
+    const swing = t * 2.6 - 1.3;             // -1.3 → +1.3 主摆角
+    const dir = flip ? -1 : 1;
+    // 右臂（主手）：从身后蓄力甩到身前
+    s.armR.rotation = a + dir * swing * 1.35;
+    s.armR.y = 2 - sw2 * 7;
+    // 左臂反方向上抬保持平衡
+    s.armL.rotation = 0.2 - dir * swing * 0.55;
+    s.armL.y = 4 + sw2 * 3;
+    // 武器：跟随主手，摆幅更大、中途抬起
+    s.weapon.rotation = a + dir * swing * 1.8;
+    s.weapon.y = 5 - sw2 * 12;
+    s.weapon.scale.x = (flip ? -1 : 1) * (1 + sw2 * 0.15);
+    // 躯干：短促前压 + 扭转（发力感）
+    s.body.rotation = dir * (t - 0.42) * 0.34;
+    s.body.y = -sw2 * 1.6;
+    s.head.rotation = -dir * (t - 0.5) * 0.22;
+    // 收势回弹
+    if (t > 0.8) s.weapon.y += (t - 0.8) * 42;
+  } else {
+    s.body.rotation = 0; s.body.y = 0; s.head.rotation = 0;
+    s.armL.rotation = 0.2; s.armL.y = 4;
   }
   // 受击
   const flash = hitT > 0 ? Math.min(1, hitT * 8) : 0;
@@ -505,6 +576,21 @@ export function makeExtractSprite(): { c: Container; beam: Graphics; pad: Graphi
   pole.circle(0, -47, 3.2).fill(0xc8ffd8);
   c.addChild(pad, beam, pole);
   return { c, beam, pad };
+}
+
+/** 门的世界内浮标：未开启时靠近显示「名称+锁」，明确哪些能进 */
+export function makeDoorLabel(name: string, kind: string): Container | null {
+  if (kind === 'flag') return null; // flag 门由剧情解锁，不作目标提示
+  const c = new Container();
+  const bg = g().roundRect(-52, -12, 104, 22, 10).fill({ color: 0x0d1117, alpha: 0.82 })
+    .stroke({ width: 1.6, color: kind === 'code' ? 0xf0a13c : 0x59c46a });
+  const lock = new Text({ text: kind === 'code' ? '🔢' : '🔒', style: new TextStyle({ fontSize: 12 }) });
+  lock.anchor.set(0.5); lock.position.set(-40, 0);
+  const t = new Text({ text: name, style: new TextStyle({ fontSize: 11, fill: '#ffe9c0', fontWeight: '600' }) });
+  t.anchor.set(0.5, 0.5); t.position.set(4, 0);
+  c.addChild(bg, lock, t);
+  c.zIndex = 9000;
+  return c;
 }
 
 export function makeDoorSprite(open: boolean, kind: string): Container {

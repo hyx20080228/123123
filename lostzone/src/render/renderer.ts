@@ -21,7 +21,7 @@ function tileBaseColor(id: number): number {
     case T.HOS_F: return 0xcfe0e4; case T.HOS_W: return 0xd3dde0;
     case T.WH_F: return 0x8f9287; case T.WH_W: return 0xa26a44;
     case T.MET_F: return 0x2f5a66; case T.MET_W: return 0x3d4a58;
-    case T.RAD_F: return 0x6a5a72; case T.RAD_W: return 0x574760;
+    case T.RAD_F: return 0x7d8490; case T.RAD_W: return 0x666d78;
     case T.CEL_F: return 0x7a6a52; case T.CEL_W: return 0x4a3f38;
     case T.HEDGE: return 0x2c4526;
     default: return 0x888888;
@@ -32,7 +32,7 @@ function tileBaseColor(id: number): number {
 function paintWall(g: Graphics, x: number, y: number, id: number, belowIsFloor: boolean) {
   const base = tileBaseColor(id);
   const topC = base;
-  const faceC = Math.max(0, Math.min(0xffffff, ((base >> 16 & 255) * 0.62 << 16) | ((base >> 8 & 255) * 0.62) | ((base & 255) * 0.62)));
+  const faceC = (((base >> 16 & 255) * 0.62 | 0) << 16) | (((base >> 8 & 255) * 0.62 | 0) << 8) | ((base & 255) * 0.62 | 0);
   const px = x * TILE, py = y * TILE;
   // 顶面（上 55%）
   g.rect(px, py, TILE, 18).fill(topC);
@@ -140,7 +140,7 @@ export class RendererCtx {
     this.fxLayer.sortableChildren = true;
     app.stage.addChild(this.tileLayer, this.objLayer, this.fxLayer);
     // 色彩分级：整体提升饱和/对比，暖色电影感（DOM filter，零每帧开销）
-    try { (app.canvas as HTMLCanvasElement).style.filter = 'saturate(1.08) contrast(1.05) brightness(1.02)'; } catch { /* ignore */ }
+    try { (app.canvas as HTMLCanvasElement).style.filter = 'saturate(1.04) contrast(1.05) brightness(1.02)'; } catch { /* ignore */ }
     window.addEventListener('resize', () => this.resizeLight());
     this.resizeLight();
     // 初始渲染一次光影，避免首帧黑屏

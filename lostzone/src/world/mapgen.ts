@@ -1,5 +1,5 @@
 // ============ 旧城区地图生成 v2（96x96，六区域 + 隐藏地窖，资源按建筑内分布） ============
-import { Grid, gget, gset, mulberry32 } from '../core/util';
+import { Grid, gget, gset } from '../core/util';
 
 export const TILE = 32;
 export const W = 96, H = 96;
@@ -38,7 +38,7 @@ export const ZONES: Record<number, ZoneInfo> = {
   [Z.WH]:   { id: Z.WH,   name: '仓库区', color: 0xc05a32, dark: 0.02, tint: 0xffb06a },
   [Z.MET]:  { id: Z.MET,  name: '地铁站', color: 0x26505e, dark: 0.22, tint: 0x3a6c88 },
   [Z.CEN]:  { id: Z.CEN,  name: '中央街区', color: 0xc4634a, dark: 0.0, tint: 0xffb27a },
-  [Z.RAD]:  { id: Z.RAD,  name: '北部广播站', color: 0x6a3d72, dark: 0.08, tint: 0xc46ad2 },
+  [Z.RAD]:  { id: Z.RAD,  name: '北部广播站', color: 0x6a6d78, dark: 0.08, tint: 0x8a95b8 },
   [Z.EXT]:  { id: Z.EXT,  name: '撤离点', color: 0x59c46a, dark: 0.02, tint: 0x8affa8 },
   [Z.CEL]:  { id: Z.CEL,  name: '钟楼地窖', color: 0x9a856a, dark: 0.3, tint: 0xc9a86a },
 };
@@ -59,7 +59,6 @@ const SOLID_TILES: Set<number> = new Set([T.RES_W, T.HOS_W, T.WH_W, T.MET_W, T.R
 export const isSolidTile = (t: number) => SOLID_TILES.has(t);
 
 export function generateWorld(): World {
-  const rng = mulberry32(20260901);
   const grid: Grid = { w: W, h: H, cells: new Uint8Array(W * H) };
   const zoneId = new Uint8Array(W * H);
   const props: PropDef[] = [], pickups: PickupDef[] = [], enemies: EnemyDef[] = [];
@@ -132,7 +131,7 @@ export function generateWorld(): World {
     [5, 20, 7, 6], [23, 20, 7, 6], [26, 12, 5, 6],
     [20, 22, 7, 6], [7, 13, 5, 6],
   ];
-  for (const [x, y, w, h] of resHouses) resHouse(x, y, w, h, rng() > .5 ? 'S' : 'E');
+  for (const [x, y, w, h] of resHouses) resHouse(x, y, w, h, (x + y) % 2 ? 'S' : 'E');
   // 花盆（月季）→ 钥匙
   gset(grid, 16, 19, T.YARD);
   props.push({ kind: 'bush', x: 16.5 * TILE, y: 19.5 * TILE, r: 10, solid: false, zone: Z.RES });
@@ -374,18 +373,26 @@ export function generateWorld(): World {
   for (let x = 2; x < W - 2; x += 3) belt.push([x, 2], [x, H - 3]);
   for (let y = 2; y < H - 2; y += 3) belt.push([2, y], [W - 3, y]);
   for (const [x, y] of belt) {
-    const jx = x + Math.floor(rng() * 2), jy = y + Math.floor(rng() * 2);
+    const jx = x + ((x * 7 + y * 13) % 3 === 0 ? 1 : 0), jy = y + ((x * 3 + y * 17) % 3 === 0 ? 1 : 0);
     if (jx <= 2 || jy <= 2 || jx >= W - 3 || jy >= H - 3) continue;
     if (isSolidTile(gget(grid, jx, jy))) continue;
     props.push({ kind: 'tree', x: jx * TILE + 16, y: jy * TILE + 16, r: 14, solid: true, zone: Z.NONE });
   }
-  // 各区间荒野点缀（确定性伪随机种子）
-  for (let i = 0; i < 46; i++) {
-    const x = 4 + Math.floor(rng() * (W - 8)), y = 4 + Math.floor(rng() * (H - 8));
+  // 各区间荒野点缀（固定坐标表，每次进入完全一致）
+  const wilds: [number, number][] = [
+    [4, 34], [8, 37], [12, 35], [6, 46], [11, 49], [15, 44], [21, 36], [25, 46], [30, 49],
+    [33, 36], [37, 54], [41, 50], [52, 52], [62, 50], [61, 56], [33, 22], [36, 25], [39, 21],
+    [55, 27], [61, 22], [65, 21], [70, 19], [76, 21], [82, 20], [87, 22], [91, 26],
+    [56, 79], [52, 81], [60, 82], [64, 79], [70, 81], [75, 84], [80, 80], [86, 78],
+    [35, 56], [39, 58], [43, 62], [33, 62], [55, 58], [57, 64], [90, 46], [92, 52], [93, 60], [91, 70], [92, 80],
+  ];
+  for (let i = 0; i < wilds.length; i++) {
+    const [x, y] = wilds[i];
     if (zoneId[y * W + x] !== Z.NONE) continue;
     if (isSolidTile(gget(grid, x, y))) continue;
-    props.push({ kind: i % 3 === 0 ? 'bush' : i % 7 === 0 ? 'tree' : 'bush', x: x * TILE + 16, y: y * TILE + 16,
-      r: i % 7 === 0 ? 14 : 9, solid: i % 7 === 0, zone: Z.NONE });
+    const tree = i % 7 === 0;
+    props.push({ kind: tree ? 'tree' : 'bush', x: x * TILE + 16, y: y * TILE + 16,
+      r: tree ? 14 : 9, solid: tree, zone: Z.NONE });
   }
 
   // ---------- 关键坐标 ----------
