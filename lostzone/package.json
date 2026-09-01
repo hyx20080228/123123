@@ -1,0 +1,22 @@
+{
+  "name": "lost-zone",
+  "private": true,
+  "version": "0.1.0",
+  "description": "LOST ZONE - 1~4 PvPvE extraction game (Vertical Slice)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "pixi.js": "^8.6.6"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.12.0",
+    "playwright": "^1.62.1",
+    "typescript": "^5.6.3",
+    "vite": "^6.0.3",
+    "vitest": "^4.1.11"
+  }
+}

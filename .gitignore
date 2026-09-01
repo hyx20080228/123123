@@ -2,3 +2,7 @@
 image-search/
 # 赞诗乐队专辑封面原图（版权素材，仅本地参考用）
 docs/concepts/refs/
+# Node
+node_modules/
+dist/
+*.log
