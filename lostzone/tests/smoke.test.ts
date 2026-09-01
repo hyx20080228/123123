@@ -104,6 +104,24 @@ describe('旧城区地图', () => {
       b.props.map(p => `${p.kind}:${p.x},${p.y}`).join('|'));
   });
 
+  test('物品刷新合法：不贴地图边、不贴区域边、不入墙不压道具', () => {
+    const w = generateWorld();
+    for (const p of w.pickups) {
+      const tx = Math.floor(p.x / 32), ty = Math.floor(p.y / 32);
+      const z = w.zoneId[ty * 96 + tx];
+      expect(z, `拾取 ${p.item} 不能在荒野`).not.toBe(Z.NONE);
+      expect(tx, `拾取 ${p.item} 距地图西边过近`).toBeGreaterThanOrEqual(6);
+      expect(ty, `拾取 ${p.item} 距地图北边过近`).toBeGreaterThanOrEqual(6);
+      expect(tx, `拾取 ${p.item} 距地图东边过近`).toBeLessThanOrEqual(89);
+      expect(ty, `拾取 ${p.item} 距地图南边过近`).toBeLessThanOrEqual(89);
+      expect(isSolidTile(w.grid.cells[ty * 96 + tx]), `拾取 ${p.item} 不能嵌墙`).toBe(false);
+      for (const prop of w.props) if (prop.solid) {
+        const d = Math.hypot(p.x - prop.x, p.y - prop.y);
+        expect(d, `拾取 ${p.item} 不能压 ${prop.kind}`).toBeGreaterThanOrEqual(prop.r + 8);
+      }
+    }
+  });
+
   test('地图实体全合法：拾取/道具/敌人不入墙不压件、边界全封闭', () => {
     const w = generateWorld();
     for (const p of w.pickups) {

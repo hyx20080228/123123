@@ -85,12 +85,13 @@ function makePartsChar(char: CharDef, sheet: Texture): CharSprite {
     spr.scale.set(h / tex.height);
     return spr;
   };
-  const legs = fit(cellTex(sheet, 3), 34);
-  const torso = fit(cellTex(sheet, 1), 44);
-  const head = fit(cellTex(sheet, 0), 38);
-  const armR = fit(cellTex(sheet, 2), 36);
-  const tail = fit(cellTex(sheet, 4), 26);
-  const pack = fit(cellTex(sheet, 5), 30);
+  // 内容统一高 256（格 300），显示尺寸 = 素材设计比例（不漏白、不拉伸）
+  const legs = fit(cellTex(sheet, 3), 41);
+  const torso = fit(cellTex(sheet, 1), 52);
+  const head = fit(cellTex(sheet, 0), 45);
+  const armR = fit(cellTex(sheet, 2), 47);
+  const tail = fit(cellTex(sheet, 4), 33);
+  const pack = fit(cellTex(sheet, 5), 35);
 
   legs.anchor.set(0.5, 1);
   torso.anchor.set(0.5, 1);
@@ -98,17 +99,17 @@ function makePartsChar(char: CharDef, sheet: Texture): CharSprite {
   tail.anchor.set(0.5, 1);
   pack.anchor.set(0.5, 1);
   armR.anchor.set(0.08, 0.1);
-  pack.scale.x *= 0.9;
 
   legs.position.set(0, 0);
-  torso.position.set(0, -34);
-  head.position.set(0, -78);
-  pack.position.set(-3, -34);
-  tail.position.set(12, -42);
-  armR.position.set(13, -76);
+  torso.position.set(0, -41);
+  head.position.set(0, -93);
+  pack.position.set(-4, -41);
+  tail.position.set(14, -50);
+  armR.position.set(15, -90);
 
   legs.zIndex = 1; tail.zIndex = 1.2; pack.zIndex = 1.4; torso.zIndex = 2;
   head.zIndex = 3; armR.zIndex = 4;
+  c.scale.set(0.86);
 
   c.addChild(shadow, legs, tail, pack, torso, head, armR);
   const empty = () => new Graphics();
@@ -147,7 +148,6 @@ function poseParts(s: CharSprite, walkT: number, moving: boolean, aimAng: number
   P.head.rotation = sw * 0.05 + Math.sin(walkT * 0.8) * 0.02;
 
   P.legs.rotation = sw * 0.16;
-  P.legs.scale.y = 1 - Math.abs(sw) * 0.05;
 
   P.tail.rotation = Math.sin(walkT * (moving ? 7 : 2.6)) * (moving ? 0.3 : 0.16);
 
@@ -156,15 +156,15 @@ function poseParts(s: CharSprite, walkT: number, moving: boolean, aimAng: number
     const t = attackT;
     const k = t * 2.4 - 1.2;
     P.armR.rotation = a + (flip ? -1 : 1) * k * 1.5;
-    P.armR.position.y = -76 - Math.sin(t * Math.PI) * 8;
+    P.armR.position.y = -90 - Math.sin(t * Math.PI) * 8;
     P.torso.rotation = (flip ? -1 : 1) * (t - 0.45) * 0.3;
-    P.torso.position.y = -34 - Math.sin(t * Math.PI) * 1.6;
+    P.torso.position.y = -41 - Math.sin(t * Math.PI) * 1.6;
   } else {
     const lift = Math.sin(walkT * 1.7) * 0.06;
     P.armR.rotation = 0.7 + lift;
-    P.armR.position.y = -76;
+    P.armR.position.y = -90;
     P.torso.rotation = 0;
-    P.torso.position.y = -34;
+    P.torso.position.y = -41;
   }
 
   const flash = hitT > 0 ? Math.min(1, hitT * 8) : 0;
