@@ -35,11 +35,11 @@ export class Ui implements HudApi {
     this.previewT += dt;
     if (this.previewChar) {
       poseChar(this.previewChar, this.previewT * 1.6, false, 0.4 + Math.sin(this.previewT * 0.7) * 0.15, 0, false);
+      // poseChar 会把 scale.x 重置为 ±1（朝向翻转），此处恢复 4.2 倍放大
+      const blink = (this.previewT % 3.4) > 3.25 ? 0.6 : 1;
+      this.previewChar.c.scale.set(this.previewChar.c.scale.x * 4.2, 4.2 * blink);
       this.previewChar.c.position.y = Math.sin(this.previewT * 1.4) * 6;
       this.previewChar.c.rotation = Math.sin(this.previewT * 0.4) * 0.04;
-      // 眨眼
-      const blink = (this.previewT % 3.4) > 3.25 ? 0.6 : 1;
-      this.previewChar.c.scale.y = (this.previewChar.c.scale.y < 0 ? -1 : 1) * blink;
     }
   };
 
