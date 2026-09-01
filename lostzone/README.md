@@ -3,7 +3,24 @@
 > 1～4 人合作 · PvPvE 搜打撤 · 卡通化顶视角 · 大世界碎片化叙事
 > 当前进度：**Vertical Slice 可玩版已完成**（浏览器直接玩）
 
-## 🎮 立即游玩
+## 🎮 立即游玩（三种方式，任选其一）
+
+### 方式一：双击即玩（零安装，推荐）
+
+到 GitHub Releases 下载 **[失落区-可玩版.html](https://github.com/hyx20080228/123123/releases)**：
+`Releases → Latest → 失落区-可玩版.html`，下载后用 Chrome / Edge / Firefox 双击打开即可游玩。不需要装任何软件。
+
+### 方式二：一键脚本（Windows / macOS / Linux）
+
+```bash
+# Windows：双击
+启动测试-Windows.bat
+
+# macOS / Linux：终端执行
+./启动测试-macOS-Linux.sh
+```
+
+### 方式三：命令行（需要 Node.js ≥ 18）
 
 ```bash
 cd lostzone
@@ -11,6 +28,8 @@ npm install
 npm run dev
 # 打开 http://localhost:5173
 ```
+
+> 无论哪种方式，游戏内通关后进度保存在浏览器 localStorage 中，关闭后不丢失。
 
 你是一名拾荒者。旧城空了，东西还在——进去，带回来。别信钟楼。
 
