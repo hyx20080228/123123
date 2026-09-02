@@ -54,7 +54,7 @@ class ProjectManager {
   createProject(name: string, author: string): Project {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
-    const fileName = `${name.replace(/[^a-zA-Z0-9]/g, '_')}_${id}.msp`;
+    const fileName = `${name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}_${id}.msp`;
     const filePath = path.join(this.projectsDir, fileName);
     const project: Project = {
       id,
@@ -118,11 +118,25 @@ const createWindow = () => {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, '../preload/index.js'),
+      sandbox: false
     },
-    title: 'My Story Studio - AI Interactive Visual Novel Maker',
+    title: 'My Story Studio - 我的故事工作室',
+    show: false
   });
 
+  // 等待页面加载完成后再显示窗口
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+    mainWindow?.focus();
+  });
+
+  // 加载HTML文件
   mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+
+  // 开发者工具（可选）
+  if (process.env.NODE_ENV === 'development') {
+    mainWindow.webContents.openDevTools();
+  }
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -137,6 +151,7 @@ const initProjectManager = () => {
   projectManager = new ProjectManager(projectsDir);
 };
 
+// 注册IPC处理程序
 ipcMain.handle('get-projects', async () => projectManager.getProjects());
 ipcMain.handle('create-project', async (_, data: { name: string; author: string }) => {
   try {
@@ -181,4 +196,13 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// 错误处理
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });

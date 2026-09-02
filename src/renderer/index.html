@@ -2,127 +2,265 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>My Story Studio</title>
+  <title>My Story Studio - 我的故事工作室</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Language" content="zh-CN,en-US">
   <style>
-    body {
-      font-family: Arial, sans-serif;
+    * {
       margin: 0;
-      padding: 20px;
-      background-color: #f0f0f0;
+      padding: 0;
+      box-sizing: border-box;
     }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
+      background-color: #f5f7fa;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
     .container {
       max-width: 1200px;
       margin: 0 auto;
       background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
+    
     h1 {
-      color: #333;
+      color: #2c3e50;
       text-align: center;
+      margin-bottom: 10px;
+      font-size: 28px;
     }
+    
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+    
+    .button-group {
+      text-align: center;
+      margin: 20px 0 30px 0;
+    }
+    
     .button {
       display: inline-block;
-      padding: 10px 20px;
-      background: #0078d7;
+      padding: 12px 28px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 10px;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .button:hover {
+      background: linear-gradient(135deg, #5a6fd1 0%, #6a4295 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    .button:active {
+      transform: translateY(0);
+    }
+    
+    #projectList {
+      margin-top: 20px;
+    }
+    
+    .project-item {
+      padding: 20px;
+      border: 1px solid #e0e0e0;
+      margin: 15px 0;
+      border-radius: 8px;
+      background: #f8f9fa;
+      transition: all 0.2s ease;
+    }
+    
+    .project-item:hover {
+      background: #ecf0f1;
+      border-color: #bdc3c7;
+    }
+    
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .project-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    .project-author {
+      color: #7f8c8d;
+      font-size: 14px;
+    }
+    
+    .project-time {
+      color: #95a5a6;
+      font-size: 12px;
+    }
+    
+    .project-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    
+    .action-button {
+      padding: 8px 16px;
+      background: #3498db;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      margin: 5px;
-      font-size: 14px;
+      font-size: 13px;
+      transition: background 0.2s;
     }
-    .button:hover {
-      background: #005a9e;
+    
+    .action-button:hover {
+      background: #2980b9;
     }
-    #projectList {
-      margin-top: 20px;
+    
+    .action-button.delete {
+      background: #e74c3c;
     }
-    .project-item {
-      padding: 15px;
-      border: 1px solid #ddd;
-      margin: 10px 0;
-      border-radius: 4px;
-      background: #f9f9f9;
+    
+    .action-button.delete:hover {
+      background: #c0392b;
+    }
+    
+    .empty-message {
+      text-align: center;
+      color: #95a5a6;
+      padding: 40px;
+      font-size: 16px;
+    }
+    
+    .loading {
+      text-align: center;
+      color: #7f8c8d;
+      padding: 20px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>My Story Studio</h1>
-    <p style="text-align: center; color: #666;">AI Interactive Visual Novel Maker - Phase 1</p>
+    <h1>My Story Studio - 我的故事工作室</h1>
+    <p class="subtitle">AI Interactive Visual Novel Maker - AI交互式视觉小说制作工具</p>
+    <p class="subtitle">Phase 1: 基础项目管理系统</p>
     
-    <div style="text-align: center; margin: 20px 0;">
-      <button class="button" onclick="createProject()">Create New Project</button>
-      <button class="button" onclick="loadProjects()">Refresh Projects</button>
+    <div class="button-group">
+      <button class="button" onclick="createProject()">新建项目 / Create Project</button>
+      <button class="button" onclick="loadProjects()">刷新列表 / Refresh</button>
     </div>
     
-    <div id="projectList"></div>
+    <div id="projectList">
+      <p class="loading">正在加载项目... / Loading projects...</p>
+    </div>
   </div>
 
   <script>
+    // 等待Electron API加载完成
+    window.addEventListener('DOMContentLoaded', function() {
+      // 检查electronAPI是否可用
+      if (!window.electronAPI) {
+        console.error('electronAPI is not available!');
+        document.getElementById('projectList').innerHTML = 
+          '<p class="empty-message" style="color: red;">错误: Electron API 未加载! / Error: Electron API not loaded!</p>';
+        return;
+      }
+      
+      // 页面加载时自动加载项目列表
+      loadProjects();
+    });
+    
     async function createProject() {
-      const name = prompt('Enter project name:');
+      const name = prompt('请输入项目名称 / Enter project name:');
       if (!name) return;
-      const author = prompt('Enter author name:', 'Author');
+      const author = prompt('请输入作者名称 / Enter author name:', '作者 / Author');
       if (!author) return;
       
       try {
         const result = await window.electronAPI.createProject(name, author);
         if (result.success) {
-          alert(`Project "${name}" created successfully!`);
+          alert(`项目 "${name}" 创建成功! / Project "${name}" created successfully!`);
           loadProjects();
         } else {
-          alert(`Error: ${result.error}`);
+          alert(`错误: ${result.error} / Error: ${result.error}`);
         }
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`错误: ${error.message} / Error: ${error.message}`);
       }
     }
     
     async function loadProjects() {
       try {
+        document.getElementById('projectList').innerHTML = '<p class="loading">正在加载... / Loading...</p>';
         const projects = await window.electronAPI.getProjects();
+        
+        if (projects.length === 0) {
+          document.getElementById('projectList').innerHTML = 
+            '<p class="empty-message">还没有项目 / No projects yet. 点击"新建项目"创建您的第一个项目! / Click "Create Project" to get started!</p>';
+          return;
+        }
+        
         const listHtml = projects.map(p => `
           <div class="project-item">
-            <strong>${p.name}</strong> by ${p.author}<br>
-            <small>Created: ${new Date(p.createdAt).toLocaleString()}</small>
-            <div style="margin-top: 10px;">
-              <button class="button" onclick="openProject('${p.id}')">Open</button>
-              <button class="button" onclick="deleteProject('${p.id}')">Delete</button>
+            <div class="project-header">
+              <div>
+                <div class="project-name">${p.name}</div>
+                <div class="project-author">作者: ${p.author} / Author: ${p.author}</div>
+              </div>
+              <div class="project-time">${new Date(p.createdAt).toLocaleString()}</div>
+            </div>
+            <div class="project-actions">
+              <button class="action-button" onclick="openProject('${p.id}')">打开 / Open</button>
+              <button class="action-button delete" onclick="deleteProject('${p.id}')">删除 / Delete</button>
             </div>
           </div>
         `).join('');
-        document.getElementById('projectList').innerHTML = listHtml || '<p>No projects yet.</p>';
+        
+        document.getElementById('projectList').innerHTML = listHtml;
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        console.error('Error loading projects:', error);
+        document.getElementById('projectList').innerHTML = 
+          '<p class="empty-message" style="color: red;">加载项目失败! / Failed to load projects!<br>错误: ' + error.message + '</p>';
       }
     }
     
     async function openProject(id) {
       try {
         const result = await window.electronAPI.openProject(id);
-        alert(`Project opened: ${result.name}`);
+        alert(`项目已打开: ${result.name} / Project opened: ${result.name}`);
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`错误: ${error.message} / Error: ${error.message}`);
       }
     }
     
     async function deleteProject(id) {
-      if (!confirm('Are you sure you want to delete this project?')) return;
+      if (!confirm('确定要删除这个项目吗? / Are you sure you want to delete this project?')) return;
       try {
         await window.electronAPI.deleteProject(id);
-        alert('Project deleted successfully!');
+        alert('项目已删除! / Project deleted successfully!');
         loadProjects();
       } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`错误: ${error.message} / Error: ${error.message}`);
       }
     }
-    
-    // Load projects on startup
-    loadProjects();
   </script>
 </body>
 </html>
