@@ -121,12 +121,20 @@ const createWindow = () => {
       sandbox: false
     },
     title: 'My Story Studio - 我的故事工作室',
-    show: true,
-    autoHideMenuBar: false,
-    frame: true
+    show: true
   });
 
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  // 使用绝对路径加载HTML文件
+  const htmlPath = path.join(__dirname, '../renderer/index.html');
+  console.log('Loading HTML from:', htmlPath);
+  
+  if (fs.existsSync(htmlPath)) {
+    mainWindow.loadFile(htmlPath);
+  } else {
+    console.error('HTML file not found at:', htmlPath);
+    console.error('Available files in __dirname:', fs.readdirSync(__dirname));
+    mainWindow.loadURL('about:blank');
+  }
 
   mainWindow.once('ready-to-show', () => {
     if (mainWindow) {

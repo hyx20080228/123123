@@ -6,20 +6,35 @@ echo My Story Studio - Starting
 echo ========================================
 echo.
 
+REM Check if path contains Chinese characters
+set "current_path=%cd%"
+echo Current directory: %current_path%
+echo.
+
+echo %current_path% | findstr /r "[\x80-\xff]" > nul
+if %errorlevel% equ 0 (
+    echo ERROR: Path contains Chinese characters!
+    echo.
+    echo Electron cannot load files from paths with Chinese characters.
+    echo.
+    echo Please move the project to an English path like:
+    echo   C:\Projects\my-story-studio
+    echo.
+    echo Then run Start.bat from there.
+    echo.
+    pause
+    goto :eof
+)
+
 REM Step 1: Check directory
 if not exist "package.json" (
     echo ERROR: package.json not found!
     echo.
     echo You are NOT in the My Story Studio project directory.
     echo.
-    echo Current directory: %cd%
-    echo.
     pause
     goto :eof
 )
-
-echo Current directory: %cd%
-echo.
 
 REM Step 2: Check Node.js
 node --version >nul 2>&1
@@ -78,6 +93,16 @@ if not exist "dist\main\index.js" (
 ) else (
     echo Step 3/3: Already built.
     echo.
+)
+
+REM Check if HTML file exists
+if not exist "dist\renderer\index.html" (
+    echo ERROR: dist/renderer/index.html not found!
+    echo.
+    echo Check if build succeeded: npm run build
+    echo.
+    pause
+    goto :eof
 )
 
 echo Starting My Story Studio...
