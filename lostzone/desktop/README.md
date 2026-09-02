@@ -14,6 +14,7 @@
 
 ## 快速开始（用户本机）
 
+### 一键启动（开发）
 ```bash
 cd lostzone/desktop
 npm install                 # 下载 Electron 运行时（首次约 120MB）
@@ -21,12 +22,24 @@ npm run gen:assets          # 生成 1GB+ 资源（约 25 分钟，可复现）
 npm start                   # 启动桌面版（启动画面 → 进入游戏）
 ```
 
-打包发行包：
-
+### 一键打包发行版（1.2GB+）
 ```bash
-npm run dist                # 当前平台目录版（Linux/macOS/Windows 各自执行）
-npm run dist:win            # Windows 目录版
+# Linux / macOS
+SIZE=1G ./build-release.sh          # 完整 1GB 资源包 → release/LostZone-Desktop-*.zip
+SIZE=150M ./build-release.sh        # 快速档验证
+
+# Windows（在 PowerShell/cmd 中）
+build-release.bat                   # 完整档 → LostZone-Desktop-win-x64.zip
+set SIZE=150M && build-release.bat  # 快速档
 ```
+
+脚本流程：npm install(带 Electron 补下载) → 生成资源 → 同步游戏本体 → electron-builder dir → zip。
+解压后运行 `linux-unpacked/失落区-LostZone`（Windows 为 `win-unpacked/失落区-LostZone.exe`）。
+
+### 云端打包（可选）
+沙盒/CI 若下载不了 Electron 二进制，可让 GitHub Actions 打包：
+把 `docs/actions-desktop-build.yml.template` 复制为 `.github/workflows/desktop-build.yml` 推送后触发
+（需 GitHub App/PAT 具备 `workflows` 权限；模板会直接在 runner 上产出并上传 Release）。
 
 ## 资源构成（`resources/`，由生成器产生，不入 git）
 
