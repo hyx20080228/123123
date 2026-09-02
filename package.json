@@ -5,7 +5,9 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "electron .",
-    "build": "npx tsc -p tsconfig.main.json && npx tsc -p tsconfig.preload.json",
+    "build": "npx tsc -p tsconfig.main.json && npx tsc -p tsconfig.preload.json && xcopy src\renderer\index.html dist\renderer\ /Y",
+    "build:ts": "npx tsc -p tsconfig.main.json && npx tsc -p tsconfig.preload.json",
+    "build:html": "xcopy src\renderer\index.html dist\renderer\ /Y",
     "start": "npm run build && electron .",
     "test": "node test-ui.js"
   },
