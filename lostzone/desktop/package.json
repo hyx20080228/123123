@@ -15,7 +15,8 @@
     "dist:linux": "npm run gen:assets && npm run copy:game && electron-builder --linux dir",
     "dist:win": "npm run gen:assets && npm run copy:game && electron-builder --win dir",
     "pack": "npm run dist",
-    "size": "python3 tools/gen_assets.py --size 0 --report"
+    "size": "python3 tools/gen_assets.py --size 0 --report",
+    "release:sh": "SIZE=${SIZE:-1G} ./build-release.sh"
   },
   "devDependencies": {
     "electron": "^44.1.1",
@@ -29,10 +30,15 @@
     },
     "files": [
       "app/**",
-      "resources/**",
       "main.js",
       "preload.js",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "resources"
+      }
     ],
     "asar": true,
     "compression": "normal",

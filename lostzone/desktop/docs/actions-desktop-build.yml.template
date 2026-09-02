@@ -1,0 +1,82 @@
+name: Desktop Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      size:
+        description: '资源包体积（OST 数量由体积决定）'
+        default: '1G'
+        type: choice
+        options: ['1G', '150M']
+      upload_release:
+        description: '完成后上传 GitHub Release（供下载）'
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: lostzone/package-lock.json
+
+      - name: Build web single-file (轻量游戏本体)
+        working-directory: lostzone
+        run: |
+          npm ci
+          npm run build:single
+
+      - name: Install Pillow (资源生成器依赖)
+        run: python3 -m pip install --break-system-packages pillow
+
+      - name: Install desktop deps (Electron + electron-builder)
+        working-directory: lostzone/desktop
+        run: npm install
+
+      - name: Generate 1G+ resources (OST/2K纹理/SFX)
+        working-directory: lostzone/desktop
+        run: python3 tools/gen_assets.py --size "${{ github.event.inputs.size || '1G' }}"
+
+      - name: Copy game + inject desktop OST
+        working-directory: lostzone/desktop
+        run: npm run copy:game
+
+      - name: Package (electron-builder, linux dir)
+        working-directory: lostzone/desktop
+        env:
+          ELECTRON_BUILDER_CACHE: /tmp/eb-cache
+        run: npx electron-builder --linux dir --publish never
+
+      - name: Zip release
+        working-directory: lostzone/desktop
+        run: |
+          cd release
+          zip -qr ../LostZone-Desktop-Linux-x64.zip linux-unpacked
+          ls -la ../LostZone-Desktop-Linux-x64.zip
+
+      - name: Upload to GitHub Release
+        if: ${{ github.event.inputs.upload_release != 'false' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v0.1.0-desktop-$(date +%Y%m%d%H%M)"
+          echo "TAG=$tag" >> "$GITHUB_ENV"
+          gh release create "$tag" /home/runner/work/123123/123123/lostzone/desktop/LostZone-Desktop-Linux-x64.zip \
+            --repo "${{ github.repository }}" \
+            --title "失落区 桌面版 (Linux x64, ${SIZE:-1G} 资源包)" \
+            --notes "GitHub Actions 自动打包：Electron 运行时 + 1GB 高清资源包（完整 OST / 2K 纹理 / 120 音效）"
+        env:
+          SIZE: ${{ github.event.inputs.size || '1G' }}
+
+      - name: Show result
+        run: |
+          echo "tag=$TAG"
+          du -sh "$GITHUB_WORKSPACE/lostzone/desktop/release/linux-unpacked" 2>/dev/null || true
