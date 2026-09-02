@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>失落区 · LOST ZONE</title>
+<style>
+  :root { --amber:#f0a13c; --line:rgba(240,161,60,.35); }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:100%; height:100%; overflow:hidden; background:#0b0d12; }
+  #bg { position:absolute; inset:0; background:#10131a center/cover no-repeat; }
+  #bg img { width:100%; height:100%; object-fit:cover; opacity:.62; }
+  #veil { position:absolute; inset:0; background:
+    radial-gradient(ellipse at 50% 42%, rgba(20,24,32,.05) 0%, rgba(8,9,13,.86) 78%),
+    linear-gradient(180deg, rgba(8,9,13,.55) 0%, rgba(8,9,13,.15) 34%, rgba(8,9,13,.9) 100%); }
+  #box { position:relative; width:100%; height:100%; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:18px; color:#e8e3d8; user-select:none; }
+  .title { font-size:64px; letter-spacing:14px; color:#fff;
+    text-shadow:0 0 30px rgba(240,161,60,.55), 0 8px 40px rgba(0,0,0,.8); }
+  .title-en { font-size:15px; letter-spacing:12px; color:#8b98ad; margin-top:-8px; }
+  .sub { font-size:15px; color:#d8c9a8; letter-spacing:3px; }
+  #start { margin-top:26px; padding:15px 54px; font-size:19px; letter-spacing:6px; cursor:pointer;
+    color:#1a1408; background:linear-gradient(180deg,#ffd08a,#e08a2a); border:0; border-radius:10px;
+    box-shadow:0 0 0 1px rgba(255,208,138,.5) inset, 0 10px 30px rgba(224,138,42,.35);
+    transition:transform .12s ease, box-shadow .12s ease; }
+  #start:hover { transform:translateY(-2px); box-shadow:0 0 0 1px rgba(255,208,138,.7) inset, 0 14px 40px rgba(224,138,42,.5); }
+  #start:active { transform:translateY(1px); }
+  #foot { position:absolute; bottom:22px; width:100%; text-align:center; font-size:12px; color:#5d6673; letter-spacing:2px; }
+  #ost { position:absolute; top:18px; right:22px; font-size:12px; color:#6f7a8a; letter-spacing:1px; text-align:right; }
+  #ost b { color:#c8a05c; }
+</style>
+</head>
+<body>
+  <div id="bg"><img id="bgimg" src="art/splash.jpg" alt="" /></div>
+  <div id="veil"></div>
+  <div id="ost">桌面 OST：<b id="ostname">待播放</b><br>Ctrl+Shift+M 切曲 · Ctrl+Shift+P 播放/暂停</div>
+  <div id="box">
+    <div class="title">失 落 区</div>
+    <div class="title-en">L O S T &nbsp; Z O N E</div>
+    <div class="sub">旧城区 · 搜打撤 · 桌面完整版</div>
+    <button id="start">进 入 旧 城 区</button>
+  </div>
+  <div id="foot">Electron 桌面版 · 高清资源包 + 完整 OST · 由 resources/ 构建</div>
+
+<script>
+  const start = document.getElementById('start');
+  start.addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+  // 桌面 OST 测试：进入前先播一首（证明 1G+ 音频资源可用）
+  const ostName = document.getElementById('ostname');
+  const TRACKS = ['灰烬黎明', '旧城区挽歌', '雨夜巡游', '撤离信号', '地铁余响', '药房微光',
+    '钟楼之夜', '荒野风息', '广播站异响', '泥泞长路', '医疗站残响', '最后一面'];
+  try {
+    const d = window.desktop;
+    if (d) {
+      d.onTrackChange(i => { ostName.textContent = TRACKS[i] || ('Track ' + (i + 1)); });
+      d.playBgm(0);
+      ostName.textContent = TRACKS[0];
+    }
+  } catch (e) { /* 开发环境无 preload 时忽略 */ }
+  window.addEventListener('keydown', (ev) => {
+    if (!window.desktop) return;
+    if (ev.ctrlKey && ev.shiftKey && (ev.key === 'M' || ev.key === 'm')) window.desktop.nextBgm();
+    if (ev.ctrlKey && ev.shiftKey && (ev.key === 'P' || ev.key === 'p')) window.desktop.nextBgm();
+  });
+</script>
+</body>
+</html>

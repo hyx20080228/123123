@@ -6,3 +6,9 @@ docs/concepts/refs/
 node_modules/
 dist/
 *.log
+
+# 桌面版大型资产与构建产物（由 desktop/tools/gen_assets.py 一键生成，勿入库）
+lostzone/desktop/resources/
+lostzone/desktop/release/
+lostzone/desktop/node_modules/
+lostzone/desktop/app/index.html

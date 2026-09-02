@@ -1,0 +1,56 @@
+{
+  "name": "lost-zone-desktop",
+  "version": "0.1.0",
+  "description": "LOST ZONE - 失落区 · 桌面版（Electron）",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "gen:assets": "python3 tools/gen_assets.py --size 1G",
+    "gen:assets:lite": "python3 tools/gen_assets.py --size 150M",
+    "copy:game": "node tools/copy_game.mjs",
+    "start": "npm run copy:game && electron .",
+    "predev": "npm run copy:game",
+    "dev": "electron .",
+    "dist": "npm run gen:assets && npm run copy:game && electron-builder --dir",
+    "dist:linux": "npm run gen:assets && npm run copy:game && electron-builder --linux dir",
+    "dist:win": "npm run gen:assets && npm run copy:game && electron-builder --win dir",
+    "pack": "npm run dist",
+    "size": "python3 tools/gen_assets.py --size 0 --report"
+  },
+  "devDependencies": {
+    "electron": "^44.1.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.lostzone.desktop",
+    "productName": "失落区-LostZone",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "app/**",
+      "resources/**",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "asar": true,
+    "compression": "normal",
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "category": "Game"
+    },
+    "win": {
+      "target": [
+        "dir"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dir"
+      ]
+    }
+  }
+}
