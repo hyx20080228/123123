@@ -124,15 +124,31 @@ const createWindow = () => {
     show: true
   });
 
-  // 使用绝对路径加载HTML文件
-  const htmlPath = path.join(__dirname, '../renderer/index.html');
-  console.log('Loading HTML from:', htmlPath);
+  // 尝试多种路径加载HTML文件
+  const possiblePaths = [
+    path.join(__dirname, '../renderer/index.html'),
+    path.join(__dirname, '../dist/renderer/index.html'),
+    path.join(__dirname, '../../renderer/index.html'),
+    path.join(__dirname, '../../dist/renderer/index.html'),
+    path.join(process.cwd(), 'src/renderer/index.html'),
+    path.join(process.cwd(), 'dist/renderer/index.html')
+  ];
   
-  if (fs.existsSync(htmlPath)) {
-    mainWindow.loadFile(htmlPath);
-  } else {
-    console.error('HTML file not found at:', htmlPath);
-    console.error('Available files in __dirname:', fs.readdirSync(__dirname));
+  let loaded = false;
+  for (const htmlPath of possiblePaths) {
+    console.log('Trying to load HTML from:', htmlPath);
+    if (fs.existsSync(htmlPath)) {
+      mainWindow.loadFile(htmlPath);
+      loaded = true;
+      console.log('Successfully loaded HTML from:', htmlPath);
+      break;
+    }
+  }
+  
+  if (!loaded) {
+    console.error('No HTML file found! Available files:');
+    console.error('__dirname:', fs.readdirSync(__dirname));
+    console.error('cwd:', fs.readdirSync(process.cwd()));
     mainWindow.loadURL('about:blank');
   }
 
