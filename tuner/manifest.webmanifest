@@ -1,0 +1,49 @@
+{
+  "name": "精调 · 高精度乐器调音器",
+  "short_name": "精调",
+  "description": "面向吉他/贝斯/尤克里里/弓弦乐器的高精度调音器。ρ(τ) 归一化相关 + 分数滞后插值 + 琴弦刚度补偿，合成信号实测固有误差 0.044 音分。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0b0e13",
+  "theme_color": "#0b0e13",
+  "categories": ["music", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "开始调音",
+      "short_name": "调音",
+      "url": "./index.html#tuner",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "节拍器",
+      "short_name": "节拍器",
+      "url": "./index.html#metro",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+# build-apk.yml — 在 GitHub Actions 里编译 APK（本机不需要装 Android Studio / JDK）
+#
+# 启用方式（在仓库根目录执行一次）：
+#   mkdir -p .github/workflows
+#   cp tuner/android-build/ci/build-apk.yml .github/workflows/
+#   git add .github && git commit -m "ci: 添加 APK 云构建" && git push
+#
+# 之后在 GitHub 仓库页 Actions → "build APK (debug)" → Run workflow 即可，
+# 产物在 Artifacts 里下载（app-debug.apk，未签名，可直接安装到手机）。
+#
+# 若要出【签名发布版】：在仓库 Settings → Secrets and variables → Actions 里配置
+#   KEYSTORE_B64      keytool 生成的 keystore 的 base64（base64 -w0 app.keystore）
+#   KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD
+# 然后运行 workflow 时勾选 release（或 push 一个 v* tag）。
+
+name: build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      flavor:
+        description: '构建类型'
+        required: true
+        default: 'debug'
+        type: choice
+        options: [debug, release]
+  push:
+    tags: ['v*']
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tuner/android-build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: 安装 Capacitor 依赖
+        run: npm ci || npm install --no-audit --no-fund
+
+      - name: 同步网页资源到 android/
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: 配置发布签名（仅 release 且已配置 Secrets 时）
+        if: ${{ (github.event.inputs.flavor == 'release' || startsWith(github.ref, 'refs/tags/v')) && env.KEYSTORE_B64 != '' }}
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 -d > /tmp/app.keystore
+          cat > keystore.properties <<EOF
+          storeFile=/tmp/app.keystore
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: 编译 APK
+        run: |
+          chmod +x android/gradlew
+          if [ -f keystore.properties ]; then
+            ./android/gradlew -p android assembleRelease -PkeystoreProperties=keystore.properties
+          else
+            ./android/gradlew -p android assembleDebug
+          fi
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: jingtiao-apk
+          path: |
+            tuner/android-build/android/app/build/outputs/apk/*/*.apk
+          if-no-files-found: error

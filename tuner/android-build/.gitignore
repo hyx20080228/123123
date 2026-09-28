@@ -1,0 +1,22 @@
+# 依赖与中间产物（Capacitor 官方约定：android/ 原生工程入库，构建产物不入库）
+node_modules/
+www/
+
+# Gradle / Android Studio 构建产物
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android/capacitor-cordova-android-plugins/build/
+android/capacitor-cordova-android-plugins/.gradle/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+*.aab
+!android/gradle/wrapper/gradle-wrapper.jar
+
+# 签名材料绝不入库
+*.keystore
+*.jks
+keystore.properties

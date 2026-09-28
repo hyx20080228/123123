@@ -1,0 +1,24 @@
+{
+  "name": "jingtiao-capacitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "精调（弦乐器调音器）的 Android 壳工程：把 tuner/ 的 PWA 打包成 APK",
+  "scripts": {
+    "build": "node scripts/build-www.mjs",
+    "add:android": "npx cap add android",
+    "patch": "node scripts/patch-android.mjs",
+    "art": "python3 scripts/make_android_assets.py",
+    "sync": "npm run build && npx cap sync android",
+    "setup": "npm install && npm run build && npx cap add android && npm run patch && npm run art && npx cap sync android",
+    "apk": "cd android && ./gradlew assembleDebug",
+    "apk:release": "cd android && ./gradlew assembleRelease",
+    "open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "appId": "com.jingtiao.tuner",
+  "appName": "精调",
+  "webDir": "www",
+  "backgroundColor": "#0B0E13",
+  "android": {
+    "backgroundColor": "#0B0E13",
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

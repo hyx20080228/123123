@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>精调 · 高精度乐器调音器</title>
+<meta name="description" content="面向吉他/贝斯/尤克里里/弓弦乐器的高精度调音器，算法实测固有误差 0.04 音分">
+<meta name="theme-color" content="#0b0e13">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="精调">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ======================= 顶部栏 ======================= -->
+  <header id="topbar">
+    <div class="tb-left">
+      <span class="logo">◈</span>
+      <div class="tb-title">
+        <strong>精调</strong>
+        <small id="tb-sub">高精度调音器</small>
+      </div>
+    </div>
+    <div class="tb-right">
+      <button class="icon-btn" id="btn-diag" title="麦克风诊断" aria-label="麦克风诊断">📊</button>
+      <button class="icon-btn" id="btn-help" title="使用说明" aria-label="使用说明">?</button>
+    </div>
+  </header>
+
+  <!-- ======================= 页面：调音 ======================= -->
+  <main id="page-tuner" class="page active">
+
+    <!-- 乐器 & 调弦选择 -->
+    <section class="picker">
+      <div class="row-scroll" id="inst-row" role="tablist" aria-label="乐器"></div>
+      <div class="row-scroll slim" id="tuning-row" aria-label="调弦"></div>
+    </section>
+
+    <!-- 主表盘 -->
+    <section class="meter-wrap" id="meter-wrap">
+      <div class="meter-state" id="meter-state">待机</div>
+
+      <div class="note-block">
+        <div class="note-name" id="note-name">—</div>
+        <div class="note-oct" id="note-oct">&nbsp;</div>
+      </div>
+
+      <canvas id="meter" width="720" height="260" aria-label="音分表"></canvas>
+
+      <div class="readout">
+        <div class="ro">
+          <span class="ro-k">偏差</span>
+          <span class="ro-v" id="ro-cents">—</span>
+          <span class="ro-u">音分</span>
+        </div>
+        <div class="ro">
+          <span class="ro-k">频率</span>
+          <span class="ro-v" id="ro-freq">—</span>
+          <span class="ro-u">Hz</span>
+        </div>
+        <div class="ro">
+          <span class="ro-k">目标</span>
+          <span class="ro-v" id="ro-target">—</span>
+          <span class="ro-u">Hz</span>
+        </div>
+      </div>
+
+      <div class="meter-bars">
+        <div class="bar" id="bar-flat"><span>偏低</span><i></i></div>
+        <div class="bar center" id="bar-center"><span>准了</span><i></i></div>
+        <div class="bar" id="bar-sharp"><span>偏高</span><i></i></div>
+      </div>
+
+      <div class="quality">
+        <div class="q-item"><label>信号</label><div class="q-track"><i id="q-level"></i></div></div>
+        <div class="q-item"><label>清晰度</label><div class="q-track"><i id="q-conf"></i></div></div>
+        <div class="q-item"><label>稳定度</label><div class="q-track"><i id="q-stab"></i></div></div>
+      </div>
+      <div class="quality-hint" id="quality-hint">拨响一根弦开始调音</div>
+    </section>
+
+    <!-- 弦选择 -->
+    <section class="strings" id="strings-section">
+      <div class="strings-head">
+        <span id="strings-title">选择弦</span>
+        <div class="seg" id="mode-seg">
+          <button data-mode="auto" class="on">自动识别</button>
+          <button data-mode="manual">手动选弦</button>
+        </div>
+      </div>
+      <div class="string-grid" id="string-grid"></div>
+    </section>
+
+    <!-- 快捷操作 -->
+    <section class="quick">
+      <button class="qbtn" id="btn-ref"><i>🔊</i><span>参考音</span></button>
+      <button class="qbtn" id="btn-strum"><i>🎶</i><span>扫弦校对</span></button>
+      <button class="qbtn" id="btn-metro"><i>⏱</i><span>节拍器</span></button>
+      <button class="qbtn" id="btn-start"><i>🎤</i><span id="btn-start-text">开始调音</span></button>
+    </section>
+  </main>
+
+  <!-- ======================= 页面：节拍器 ======================= -->
+  <main id="page-metro" class="page">
+    <section class="panel">
+      <h2>节拍器</h2>
+      <div class="bpm-display">
+        <button class="step-btn" id="bpm-minus" aria-label="减速">−</button>
+        <div class="bpm-mid">
+          <input type="range" id="bpm-slider" min="20" max="300" value="90" step="1">
+          <div class="bpm-num"><span id="bpm-value">90</span><small>BPM</small></div>
+        </div>
+        <button class="step-btn" id="bpm-plus" aria-label="加速">+</button>
+      </div>
+      <div class="tap-row">
+        <button class="tap-btn" id="btn-tap">TAP 测速</button>
+        <span class="tap-hint" id="tap-hint">连续点击 4 次以上测出速度</span>
+      </div>
+      <div class="metro-grid">
+        <div class="field">
+          <label>拍号（每小节拍数）</label>
+          <div class="chips" id="ts-chips">
+            <button data-v="1">1</button><button data-v="2">2</button>
+            <button data-v="3">3</button><button data-v="4" class="on">4</button>
+            <button data-v="5">5</button><button data-v="6">6</button>
+            <button data-v="7">7</button><button data-v="8">8</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>细分</label>
+          <div class="chips" id="sub-chips">
+            <button data-v="1" class="on">四分</button>
+            <button data-v="2">八分</button>
+            <button data-v="3">三连</button>
+            <button data-v="4">十六</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>音量 <span id="metro-vol-v">70%</span></label>
+          <input type="range" id="metro-vol" min="0" max="100" value="70">
+        </div>
+      </div>
+      <div class="beat-dots" id="beat-dots"></div>
+      <div class="metro-presets">
+        <span>常用：</span>
+        <button data-bpm="60">60</button><button data-bpm="72">72</button>
+        <button data-bpm="84">84</button><button data-bpm="96">96</button>
+        <button data-bpm="120">120</button><button data-bpm="144">144</button>
+        <button data-bpm="168">168</button>
+      </div>
+      <button class="big-btn" id="btn-metro-toggle">▶ 开始</button>
+    </section>
+  </main>
+
+  <!-- ======================= 页面：参考音 ======================= -->
+  <main id="page-ref" class="page">
+    <section class="panel">
+      <h2>参考音</h2>
+      <p class="muted">播放标准音，用耳朵对比拍频。老手调音的传统方法：两个音完全一致时"嗡嗡"的拍频会消失。</p>
+      <div class="field">
+        <label>音色</label>
+        <div class="chips" id="tone-chips">
+          <button data-v="pluck" class="on">拨弦</button>
+          <button data-v="sine">纯音</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>时长 <span id="tone-dur-v">2.2 秒</span></label>
+        <input type="range" id="tone-dur" min="1" max="6" value="2.2" step="0.1">
+      </div>
+      <div class="field">
+        <label>音量 <span id="tone-vol-v">80%</span></label>
+        <input type="range" id="tone-vol" min="0" max="100" value="80">
+      </div>
+      <div class="ref-grid" id="ref-grid"></div>
+      <div class="ref-chords" id="ref-chords"></div>
+      <button class="big-btn ghost" id="btn-stop-tone">■ 停止发声</button>
+    </section>
+  </main>
+
+  <!-- ======================= 页面：精度/设置 ======================= -->
+  <main id="page-set" class="page">
+    <section class="panel">
+      <h2>精度设置</h2>
+
+      <div class="field">
+        <label>A4 参考频率 <span id="a4-v">440.0 Hz</span></label>
+        <input type="range" id="a4-slider" min="415" max="466" value="440" step="0.1">
+        <div class="chips" id="a4-presets">
+          <button data-v="415">415 巴洛克</button>
+          <button data-v="432">432 古典</button>
+          <button data-v="440" class="on">440 标准</button>
+          <button data-v="442">442 管弦乐</button>
+          <button data-v="446">446</button>
+        </div>
+      </div>
+
+      <div class="switch-row">
+        <div><strong>琴弦刚度补偿</strong><small>自动拟合非谐性系数 B 并还原真实基频，低音缠弦可修正 3~5 音分</small></div>
+        <label class="sw"><input type="checkbox" id="sw-inharm" checked><i></i></label>
+      </div>
+      <div class="switch-row">
+        <div><strong>工频哼声抑制</strong><small>识别 50/60 Hz 市电干扰（音箱、充电器附近），避免锁定到哼声</small></div>
+        <label class="sw"><input type="checkbox" id="sw-hum" checked><i></i></label>
+      </div>
+      <div class="switch-row">
+        <div><strong>稳定后锁定读数</strong><small>音符稳定 ≥250 ms 才给出「锁定」判定，避开音头的物理偏差</small></div>
+        <label class="sw"><input type="checkbox" id="sw-lock" checked><i></i></label>
+      </div>
+      <div class="switch-row">
+        <div><strong>到位震动反馈</strong><small>调准时轻微震动（需系统支持）</small></div>
+        <label class="sw"><input type="checkbox" id="sw-haptic" checked><i></i></label>
+      </div>
+      <div class="switch-row">
+        <div><strong>降号显示</strong><small>用 Db/Eb 代替 C#/D#</small></div>
+        <label class="sw"><input type="checkbox" id="sw-flat"><i></i></label>
+      </div>
+
+      <div class="field">
+        <label>分析窗口 <span id="win-v">自动</span></label>
+        <div class="chips" id="win-chips">
+          <button data-v="auto" class="on">自动（推荐）</button>
+          <button data-v="fast">快速 43ms</button>
+          <button data-v="precise">精确 85ms</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>噪声门限 <span id="gate-v">−52 dB</span></label>
+        <input type="range" id="gate-slider" min="-75" max="-30" value="-52" step="1">
+        <div class="hint-row">
+          当前环境底噪：<strong id="ambient-v">— dB</strong>
+          <button class="mini-btn" id="btn-calibrate-gate">自动设定</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>到位判定容差 <span id="tol-v">±2.0 音分</span></label>
+        <input type="range" id="tol-slider" min="0.5" max="10" value="2" step="0.5">
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>调音记录</h2>
+      <p class="muted">记录每根弦调准后的实际偏差，用于观察琴的"音准体质"（例如某根弦总是偏高，可能是品丝或弦老化问题）。</p>
+      <div class="hist-table" id="hist-table"></div>
+      <div class="hist-actions">
+        <button class="mini-btn" id="btn-hist-save">记录当前</button>
+        <button class="mini-btn danger" id="btn-hist-clear">清空</button>
+      </div>
+      <canvas id="hist-chart" width="680" height="200"></canvas>
+    </section>
+
+    <section class="panel">
+      <h2>关于精度</h2>
+      <div class="about-acc" id="about-acc"></div>
+    </section>
+  </main>
+
+  <!-- ======================= 底部导航 ======================= -->
+  <nav id="tabbar">
+    <button data-page="tuner" class="on"><i>◎</i><span>调音</span></button>
+    <button data-page="metro"><i>⏱</i><span>节拍器</span></button>
+    <button data-page="ref"><i>🔊</i><span>参考音</span></button>
+    <button data-page="set"><i>⚙</i><span>设置</span></button>
+  </nav>
+
+  <!-- ======================= 弹层 ======================= -->
+  <div class="modal" id="modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modal-title">提示</h3>
+        <button class="icon-btn" id="modal-close" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
