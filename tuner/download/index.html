@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>精调 · 下载与安装</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; background: #0b0e13; color: #dbe4f0;
+    font: 15px/1.65 -apple-system, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: .5px; }
+  h1 .g { color: #34d67f; }
+  .sub { color: #8296b0; margin: 0 0 26px; font-size: 13.5px; }
+  .card {
+    background: #131a24; border: 1px solid #223046; border-radius: 16px;
+    padding: 18px 18px 16px; margin-bottom: 16px;
+  }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .card p { margin: 8px 0; color: #a9b8cc; font-size: 13.5px; }
+  .btn {
+    display: block; width: 100%; text-align: center; text-decoration: none;
+    background: #1d2a3c; color: #eaf2ff; border: 1px solid #2f415c;
+    border-radius: 12px; padding: 13px 14px; margin: 10px 0 0; font-size: 15px; font-weight: 600;
+  }
+  .btn.primary { background: #123f2b; border-color: #1f6b45; color: #7ef0ae; }
+  .btn:active { transform: scale(.985); }
+  .meta { color: #6d8099; font-size: 12px; margin-top: 6px; word-break: break-all; }
+  code, pre {
+    background: #0e141d; border: 1px solid #1f2b3d; border-radius: 8px;
+    color: #9fd6b4; font: 12.5px/1.7 ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  pre { padding: 10px 12px; overflow-x: auto; }
+  ol { padding-left: 20px; color: #a9b8cc; font-size: 13.5px; }
+  li { margin: 5px 0; }
+  .warn { color: #e6c07b; }
+  .tag {
+    display: inline-block; background: #1a2635; border: 1px solid #2b3d55; color: #8fb3dd;
+    border-radius: 999px; padding: 1px 9px; font-size: 11.5px; margin-left: 6px; vertical-align: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>精调 <span class="g">·</span> 下载与安装</h1>
+  <p class="sub">高精度弦乐器调音器（MAE 0.044 音分 · 八度误判 0）· v<span id="ver">1.0.0</span></p>
+
+  <div class="card">
+    <h2>① 手机直接用（最快，30 秒）</h2>
+    <p>本页所在站点就是 App 本体。手机 Chrome / Edge 打开后
+       「⋮ → <b>添加到主屏幕</b>」，即得到一个离线可用的调音 App，无需下载任何文件。</p>
+    <a class="btn primary" href="../index.html">打开调音器 →</a>
+    <p class="meta">需要 HTTPS 或 localhost 才允许麦克风；安装后首次点「🎤 开始调音」授权即可。</p>
+  </div>
+
+  <div class="card">
+    <h2>② 下载安装包</h2>
+    <div id="pkgs"><p>读取清单中…</p></div>
+    <p class="meta">PWA 包：解压后整个目录丢到任意静态 HTTPS 托管（GitHub Pages / Cloudflare Pages / Vercel / 自己的 nginx）即可。<br>
+       完整包：含全部源码、精度测试与<b>已配置好的 Android 打包工程</b>（见 ③）。</p>
+  </div>
+
+  <div class="card">
+    <h2>③ 要 APK？<span class="tag">需一次构建</span></h2>
+    <p class="warn">本预览沙箱的网络白名单不放行 Google/Maven/Gradle，无法在此编译 APK；
+       以下任一方式约 5 分钟出包：</p>
+    <ol>
+      <li><b>GitHub Actions（零本机环境）</b>：完整包里有 <code>android-build/ci/build-apk.yml</code>，
+          拷到仓库 <code>.github/workflows/</code> 推送后，Actions 页 Run workflow，产物里下载 APK。</li>
+      <li><b>本机命令行</b>（Node 20+ / JDK 17 / Android Studio 自带 SDK）：</li>
+    </ol>
+    <pre>cd jingtiao/android-build
+npm install
+npm run sync      # 网页资源 → android 工程
+npm run apk       # → android/app/build/outputs/apk/debug/app-debug.apk</pre>
+    <ol start="3">
+      <li><b>Android Studio</b>：<code>npx cap open android</code> 后 Build → Build APK(s)。</li>
+    </ol>
+    <p class="meta">android/ 原生工程已打好调音所需补丁：麦克风权限声明（Capacitor 会自动弹运行时授权）、
+       竖屏、屏幕常亮、签名接线、与 PWA 同套图标。详见包内 <code>android-build/README.md</code>。</p>
+  </div>
+
+  <div class="card">
+    <h2>④ 校验</h2>
+    <p class="meta" id="hashes">—</p>
+  </div>
+</div>
+
+<script>
+fetch('./dist/manifest.json', { cache: 'no-store' })
+  .then(r => r.json())
+  .then(m => {
+    document.getElementById('ver').textContent = m.version;
+    const names = {
+      'pwa': ['精调 PWA 部署包', '仅运行所需文件（网页 + 清单 + SW + 图标）'],
+      'full': ['精调 完整工程包', '源码 + 精度测试 + Android 打包工程 + 文档'],
+    };
+    document.getElementById('pkgs').innerHTML = m.packages.map(p => {
+      const kind = p.file.includes('-pwa-') ? 'pwa' : 'full';
+      return `<a class="btn" href="${p.href}" download>${names[kind][0]}
+              <span style="font-weight:400;color:#8fa3bd">· ${(p.bytes/1048576).toFixed(2)} MB</span></a>
+              <div class="meta">${names[kind][1]}</div>`;
+    }).join('');
+    document.getElementById('hashes').innerHTML =
+      m.packages.map(p => `${p.file}<br>sha256: ${p.sha256}`).join('<br><br>');
+  })
+  .catch(() => {
+    document.getElementById('pkgs').innerHTML =
+      '<p class="warn">清单读取失败：请先运行 <code>python3 tuner/download/make_zips.py</code> 生成分发包。</p>';
+  });
+</script>
+</body>
+</html>
