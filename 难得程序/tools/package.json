@@ -1,0 +1,13 @@
+{
+  "name": "nande-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "难得民谣小程序的本地工具：图标生成 + 网页预览构建",
+  "scripts": {
+    "icons": "node make-icons.js",
+    "preview": "node build-preview.js"
+  },
+  "dependencies": {
+    "sharp": "^0.35.5"
+  }
+}

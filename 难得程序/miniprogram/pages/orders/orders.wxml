@@ -1,0 +1,44 @@
+<view class="nd-page orders">
+
+  <view class="tabs">
+    <view class="tab {{tab === 'upcoming' ? 'is-on' : ''}}" data-tab="upcoming" bindtap="switchTab">
+      还没去 <text class="tab__n">{{upcoming.length}}</text>
+    </view>
+    <view class="tab {{tab === 'history' ? 'is-on' : ''}}" data-tab="history" bindtap="switchTab">
+      去过的 <text class="tab__n">{{history.length}}</text>
+    </view>
+  </view>
+
+  <view wx:if="{{list.length}}">
+    <view class="row" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="open">
+      <view class="row__left">
+        <view class="row__md">{{item.md}}</view>
+        <view class="row__week">{{item.week}}</view>
+        <view class="row__slot">{{item.slot}}</view>
+      </view>
+      <view class="row__cut"></view>
+      <view class="row__main">
+        <view class="row__line1">
+          <text class="row__table">{{item.zoneName}} {{item.tableName}}</text>
+          <text class="row__people">{{item.people}} 位</text>
+        </view>
+        <view class="row__show">{{item.showTitle}}</view>
+        <view class="row__code">取号 {{item.code}}</view>
+      </view>
+      <view class="row__right">
+        <view class="row__status row__status--{{item.status}}">{{item.statusText}}</view>
+        <image class="nd-ic-s row__arrow" src="/assets/icons/ic-arrow.png" />
+      </view>
+    </view>
+  </view>
+
+  <view class="nd-empty" wx:elif="{{loaded}}">
+    <view class="nd-empty__mark">♪</view>
+    <view class="empty__t" wx:if="{{tab === 'upcoming'}}">还没有订桌</view>
+    <view class="empty__t" wx:else>还没有来过的记录</view>
+    <view class="empty__d">挑个晚上来听歌吧</view>
+    <view class="nd-btn nd-btn-soft empty__btn" bindtap="goReserve">去订一张桌子</view>
+  </view>
+
+  <view class="nd-foot" wx:if="{{list.length}}">所有预约都在这里了</view>
+</view>

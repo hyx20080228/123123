@@ -1,0 +1,97 @@
+<view class="nd-page mine">
+
+  <!-- 名片 -->
+  <view class="card">
+    <view class="card__row">
+      <view class="card__seal">难得</view>
+      <view class="nd-grow">
+        <view class="card__name" wx:if="{{hasProfile}}">{{profile.name}}</view>
+        <view class="card__name" wx:else>旅人</view>
+        <view class="card__phone" wx:if="{{hasProfile}}">{{profile.phone}}</view>
+        <view class="card__phone" wx:else>还没订过桌，订一次就记住你了</view>
+      </view>
+    </view>
+    <view class="card__stat">
+      <view class="stat" bindtap="goOrders">
+        <text class="stat__n">{{upcoming}}</text>
+        <text class="stat__k">还没去</text>
+      </view>
+      <view class="stat__sep"></view>
+      <view class="stat" bindtap="goOrders">
+        <text class="stat__n">{{count}}</text>
+        <text class="stat__k">订过的</text>
+      </view>
+      <view class="stat__sep"></view>
+      <view class="stat" bindtap="goReserve">
+        <text class="stat__n">＋</text>
+        <text class="stat__k">去订桌</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 菜单 -->
+  <view class="nd-card menu">
+    <view class="mcell" bindtap="goOrders">
+      <image class="nd-ic" src="/assets/icons/ic-ticket.png" />
+      <text class="mcell__t">我的预约</text>
+      <image class="nd-ic-s mcell__arrow" src="/assets/icons/ic-arrow.png" />
+    </view>
+    <view class="mcell" bindtap="soon">
+      <image class="nd-ic" src="/assets/icons/ic-note.png" />
+      <text class="mcell__t">线上点歌</text>
+      <text class="mcell__soon">二期</text>
+      <image class="nd-ic-s mcell__arrow" src="/assets/icons/ic-arrow.png" />
+    </view>
+    <view class="mcell" bindtap="soon">
+      <image class="nd-ic" src="/assets/icons/ic-guitar.png" />
+      <text class="mcell__t">扫码点单</text>
+      <text class="mcell__soon">二期</text>
+      <image class="nd-ic-s mcell__arrow" src="/assets/icons/ic-arrow.png" />
+    </view>
+    <view class="mcell" bindtap="openMap">
+      <image class="nd-ic" src="/assets/icons/ic-location.png" />
+      <text class="mcell__t">到店怎么走</text>
+      <image class="nd-ic-s mcell__arrow" src="/assets/icons/ic-arrow.png" />
+    </view>
+    <view class="mcell" bindtap="call">
+      <image class="nd-ic" src="/assets/icons/ic-phone.png" />
+      <text class="mcell__t">联系店家</text>
+      <image class="nd-ic-s mcell__arrow" src="/assets/icons/ic-arrow.png" />
+    </view>
+    <view class="mcell" bindtap="about">
+      <image class="nd-ic" src="/assets/icons/ic-moon.png" />
+      <text class="mcell__t">关于难得</text>
+      <image class="nd-ic-s mcell__arrow" src="/assets/icons/ic-arrow.png" />
+    </view>
+  </view>
+
+  <!-- 路线图 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">难得自己的小程序</text>
+    <view class="nd-section__line"></view>
+  </view>
+
+  <view class="nd-card road">
+    <view class="road__item" wx:for="{{roadmap}}" wx:key="stage">
+      <view class="road__dot road__dot--{{item.status}}"></view>
+      <view class="nd-grow">
+        <view class="road__t">
+          <text class="road__stage">{{item.stage}}</text>
+          <text class="road__title">{{item.title}}</text>
+          <text class="road__doing" wx:if="{{item.status === 'doing'}}">进行中</text>
+        </view>
+        <view class="road__d">{{item.desc}}</view>
+      </view>
+    </view>
+    <view class="road__note">先把订桌跑顺，再把点单搬过来，佣金省下来给乐手加演出费。</view>
+  </view>
+
+  <!-- 店员入口 -->
+  <view class="staffentry" bindtap="goStaff">
+    <text class="staffentry__t">店员模式</text>
+    <text class="staffentry__d">需要口令 · 看今天的订桌</text>
+  </view>
+
+  <view class="nd-foot">难得民谣 · NANDE FOLK · {{version}}</view>
+</view>

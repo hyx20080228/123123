@@ -1,0 +1,125 @@
+<view class="nd-page detail" wx:if="{{order}}">
+
+  <!-- 大票根 -->
+  <view class="nd-ticket tk">
+    <view class="tk__head">
+      <view>
+        <view class="tk__shop">难得民谣</view>
+        <view class="tk__en">NANDE FOLK · 订座凭条</view>
+      </view>
+      <view class="{{stampClass}}">{{order.statusText}}</view>
+    </view>
+
+    <view class="tk__code">
+      <text class="tk__code-label">取号</text>
+      <text class="tk__code-val">{{order.code}}</text>
+    </view>
+
+    <view class="nd-perf"></view>
+
+    <view class="tk__grid">
+      <view class="tk__cell">
+        <text class="tk__k">日子</text>
+        <text class="tk__v">{{order.dateText}} {{order.week}}</text>
+      </view>
+      <view class="tk__cell">
+        <text class="tk__k">到店</text>
+        <text class="tk__v">{{order.slot}}</text>
+      </view>
+      <view class="tk__cell">
+        <text class="tk__k">桌位</text>
+        <text class="tk__v">{{order.zoneName}} {{order.tableName}}</text>
+      </view>
+      <view class="tk__cell">
+        <text class="tk__k">人数</text>
+        <text class="tk__v">{{order.people}} 位</text>
+      </view>
+      <view class="tk__cell">
+        <text class="tk__k">最低消费</text>
+        <text class="tk__v">¥{{order.minSpend}}</text>
+      </view>
+      <view class="tk__cell">
+        <text class="tk__k">当晚</text>
+        <text class="tk__v">{{order.showTitle}}</text>
+      </view>
+    </view>
+
+    <view class="tk__who">
+      <text class="tk__k">联系人</text>
+      <text class="tk__v">{{order.name}} · {{order.phoneMask}}</text>
+    </view>
+
+    <view class="tk__remark" wx:if="{{order.remark}}">
+      <text class="tk__k">备注</text>
+      <text class="tk__remark-text">{{order.remark}}</text>
+    </view>
+
+    <view class="nd-perf"></view>
+
+    <view class="tk__bar">
+      <view class="bar" wx:for="{{bars}}" wx:key="k" style="width:{{item.w}}rpx"></view>
+    </view>
+    <view class="tk__barcode-text">{{order.code}} · 到店给店员看这一页</view>
+  </view>
+
+  <view class="hint">{{hint}}</view>
+
+  <!-- 操作 -->
+  <view class="acts">
+    <view class="act" bindtap="openMap">
+      <image class="nd-ic" src="/assets/icons/ic-location.png" />
+      <text class="act__t">带我过去</text>
+    </view>
+    <view class="act" bindtap="call">
+      <image class="nd-ic" src="/assets/icons/ic-phone.png" />
+      <text class="act__t">联系店家</text>
+    </view>
+    <view class="act" bindtap="change">
+      <image class="nd-ic" src="/assets/icons/ic-calendar.png" />
+      <text class="act__t">换个时间</text>
+    </view>
+  </view>
+
+  <!-- 到店流程 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">到店以后</text>
+    <view class="nd-section__line"></view>
+  </view>
+
+  <view class="nd-card steps">
+    <view class="step">
+      <view class="step__no">1</view>
+      <view class="nd-grow">
+        <view class="step__t">进门报一声取号</view>
+        <view class="step__d">把这一页给店员看，或者直接说 {{order.code}}</view>
+      </view>
+    </view>
+    <view class="step">
+      <view class="step__no">2</view>
+      <view class="nd-grow">
+        <view class="step__t">坐到 {{order.tableName}}</view>
+        <view class="step__d">{{order.zoneName}}，店员会带你过去</view>
+      </view>
+    </view>
+    <view class="step">
+      <view class="step__no">3</view>
+      <view class="nd-grow">
+        <view class="step__t">点单</view>
+        <view class="step__d">这桌最低消费 ¥{{order.minSpend}}，先来杯什么都行</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="meta">下单时间 {{order.createdText}}</view>
+
+  <view class="bottom-acts" wx:if="{{order.upcoming}}">
+    <view class="nd-btn nd-btn-ghost half" bindtap="cancel">取消预约</view>
+    <view class="nd-btn nd-btn-main half" bindtap="goHome">回到酒馆</view>
+  </view>
+  <view class="bottom-acts" wx:else>
+    <view class="nd-btn nd-btn-main full" bindtap="goHome">再订一次</view>
+  </view>
+
+  <view class="nd-foot">难得今宵，难得你来</view>
+</view>

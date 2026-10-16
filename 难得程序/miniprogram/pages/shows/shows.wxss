@@ -1,0 +1,90 @@
+.shows { padding-top: 30rpx; }
+
+.poster { text-align: center; margin-bottom: 36rpx; }
+.poster__en { font-size: 19rpx; letter-spacing: 7rpx; color: var(--nd-amber); }
+.poster__title {
+  font-family: 'Songti SC', 'STSong', serif;
+  font-size: 48rpx;
+  font-weight: 700;
+  letter-spacing: 8rpx;
+  margin-top: 10rpx;
+}
+.poster__sub { font-size: 22rpx; color: var(--nd-ink-3); margin-top: 8rpx; letter-spacing: 1rpx; }
+.poster__rule {
+  width: 120rpx;
+  height: 2rpx;
+  background: var(--nd-ink);
+  margin: 24rpx auto 0;
+  opacity: 0.35;
+}
+
+.show {
+  display: flex;
+  padding: 26rpx 0;
+  border-bottom: 2rpx dashed var(--nd-line);
+}
+.show.is-today {
+  background: var(--nd-card);
+  border: 2rpx solid var(--nd-amber);
+  border-radius: 10rpx;
+  padding: 26rpx 24rpx;
+  margin-bottom: 10rpx;
+  box-shadow: 0 6rpx 0 rgba(194, 116, 58, 0.18);
+}
+.show.is-closed { opacity: 0.55; }
+
+.show__date { width: 120rpx; flex: none; text-align: center; }
+.show__label {
+  font-family: 'Songti SC', serif;
+  font-size: 28rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.show__md { font-size: 21rpx; color: var(--nd-ink-3); margin-top: 2rpx; }
+.show__today {
+  display: inline-block;
+  margin-top: 8rpx;
+  font-size: 18rpx;
+  color: #FFF6E8;
+  background: var(--nd-amber);
+  border-radius: 4rpx;
+  padding: 1rpx 10rpx;
+  letter-spacing: 2rpx;
+}
+
+.show__body { flex: 1; min-width: 0; padding-left: 20rpx; border-left: 2rpx solid var(--nd-line); }
+.show__titlerow { display: flex; align-items: baseline; }
+.show__title {
+  font-family: 'Songti SC', 'STSong', serif;
+  font-size: 32rpx;
+  font-weight: 700;
+  letter-spacing: 3rpx;
+}
+.show__hot { font-size: 19rpx; color: var(--nd-wine); margin-left: 12rpx; }
+.show__artist { font-size: 24rpx; color: var(--nd-amber-deep); margin-top: 4rpx; letter-spacing: 1rpx; }
+.show__desc { font-size: 22rpx; color: var(--nd-ink-2); margin-top: 8rpx; line-height: 1.7; }
+.show__foot { display: flex; align-items: center; margin-top: 12rpx; }
+.show__time { font-size: 20rpx; color: var(--nd-ink-3); }
+.show__style {
+  font-size: 19rpx;
+  color: var(--nd-moss);
+  margin-left: 16rpx;
+  border: 2rpx solid #D6DCCB;
+  border-radius: 4rpx;
+  padding: 0 10rpx;
+}
+.show__book { margin-left: auto; font-size: 22rpx; color: var(--nd-amber); letter-spacing: 1rpx; }
+
+.tip {
+  margin-top: 40rpx;
+  padding: 26rpx 28rpx;
+  background: var(--nd-night);
+  border-radius: 10rpx;
+}
+.tip__t {
+  font-family: 'Songti SC', serif;
+  font-size: 28rpx;
+  color: #E7C98C;
+  letter-spacing: 3rpx;
+}
+.tip__d { font-size: 22rpx; color: #A4937D; margin-top: 10rpx; line-height: 1.8; }

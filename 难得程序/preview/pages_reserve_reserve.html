@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=375,initial-scale=1" />
+<title>订一张桌子</title>
+<style>
+html,body{margin:0;padding:0;width:375px;}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue','Microsoft YaHei',sans-serif;}
+.pv-screen{width:375px;min-height:812px;position:relative;display:flex;flex-direction:column;background:#F6EFE3;}
+.pv-statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px 0 24px;font-size:13px;font-weight:600;color:#2A241F;flex:none;}
+.pv-nav{height:44px;display:flex;align-items:center;justify-content:center;position:relative;flex:none;background:#F6EFE3;}
+.pv-nav__title{font-size:16px;font-weight:600;letter-spacing:1px;color:#2A241F;font-family:'Songti SC',serif;}
+.pv-nav__back{position:absolute;left:14px;font-size:17px;color:#2A241F;}
+.pv-nav__capsule{position:absolute;right:10px;width:76px;height:28px;border:1px solid rgba(42,36,31,.18);border-radius:14px;display:flex;align-items:center;justify-content:space-around;font-size:13px;color:#2A241F;background:rgba(255,255,255,.35);}
+.pv-body{flex:1;overflow:auto;}
+.pv-tabbar{height:54px;display:flex;align-items:center;border-top:1px solid #E0D2BA;flex:none;padding-bottom:6px;padding-top:4px;}
+.pv-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.pv-tab img{width:22px;height:22px;}
+.pv-tab span{font-size:10px;letter-spacing:.5px;}
+img{display:block;}
+input,textarea{border:none;background:transparent;outline:none;font-family:inherit;}
+.wx-text{display:inline;}
+a{text-decoration:none;color:inherit;}
+/* ===========================================================
+   难得民谣 · 全局样式（设计系统）
+   风格关键词：牛皮纸 / 木头 / 暖灯 / 铅字印刷 / 票根
+   =========================================================== */
+
+.wxpage {
+  --nd-paper: #F6EFE3;        /* 纸底 */
+  --nd-card: #FDF9F0;         /* 卡片 */
+  --nd-card-deep: #F0E5D2;    /* 次级底 */
+  --nd-ink: #2A241F;          /* 墨色主文字 */
+  --nd-ink-2: #6B6056;        /* 次级文字 */
+  --nd-ink-3: #9C8B74;        /* 弱文字 */
+  --nd-line: #E0D2BA;         /* 分割线 */
+  --nd-amber: #C2743A;        /* 主色：威士忌 / 木吉他 */
+  --nd-amber-deep: #A2562A;
+  --nd-amber-soft: #F3E2CE;
+  --nd-moss: #5F6B51;         /* 苔绿 */
+  --nd-wine: #8C3B2E;         /* 酒红 */
+  --nd-gold: #C9A227;
+  --nd-night: #241E1A;        /* 夜色块 */
+
+  background-color: var(--nd-paper);
+  /* 纸张颗粒 */
+  background-image:
+    radial-gradient(rgba(122, 96, 58, 0.05) 1px, transparent 1px),
+    radial-gradient(rgba(122, 96, 58, 0.035) 1px, transparent 1px);
+  background-size: 7.00px 7.00px, 11.50px 11.50px;
+  background-position: 0 0, 3.50px 5.50px;
+
+  color: var(--nd-ink);
+  font-size: 14.00px;
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+}
+
+view, text, input, textarea, scroll-view, navigator, button, image {
+  box-sizing: border-box;
+}
+
+/* ---------- 文字 ---------- */
+.nd-serif {
+  font-family: 'Songti SC', 'STSong', 'SimSun', 'Noto Serif CJK SC', serif;
+}
+.nd-h1 {
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+  font-size: 22.00px;
+  font-weight: 700;
+  letter-spacing: 2.00px;
+  color: var(--nd-ink);
+}
+.nd-h2 {
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+  font-size: 17.00px;
+  font-weight: 700;
+  letter-spacing: 1.00px;
+}
+.nd-en {
+  font-size: 10.00px;
+  letter-spacing: 3.00px;
+  color: var(--nd-ink-3);
+  text-transform: uppercase;
+}
+.nd-muted { color: var(--nd-ink-2); }
+.nd-weak { color: var(--nd-ink-3); }
+.nd-amber { color: var(--nd-amber); }
+.nd-wine { color: var(--nd-wine); }
+.nd-sm { font-size: 12.00px; }
+.nd-xs { font-size: 10.50px; }
+.nd-bold { font-weight: 600; }
+
+/* ---------- 布局 ---------- */
+.nd-page {
+  min-height: 100vh;
+  padding: 0 14.00px 90.00px;
+}
+.nd-row { display: flex; align-items: center; }
+.nd-row-between { display: flex; align-items: center; justify-content: space-between; }
+.nd-col { display: flex; flex-direction: column; }
+.nd-grow { flex: 1; min-width: 0; }
+.nd-gap-s { height: 8.00px; }
+.nd-gap { height: 14.00px; }
+.nd-gap-l { height: 24.00px; }
+
+/* ---------- 卡片 ---------- */
+.nd-card {
+  background: var(--nd-card);
+  border: 1.00px solid var(--nd-line);
+  border-radius: 5.00px;
+  padding: 14.00px;
+  box-shadow: 0 3.00px 0 rgba(42, 36, 31, 0.04);
+}
+.nd-card-flat {
+  background: var(--nd-card);
+  border: 1.00px solid var(--nd-line);
+  border-radius: 5.00px;
+}
+.nd-card-night {
+  background: var(--nd-night);
+  border-radius: 5.00px;
+  color: var(--nd-paper);
+  padding: 14.00px;
+}
+.nd-card-night .nd-muted { color: #BFAE97; }
+
+/* 章节标题：✦ 标题 ——————— */
+.nd-section {
+  display: flex;
+  align-items: center;
+  margin: 22.00px 0 11.00px;
+}
+.nd-section__mark {
+  color: var(--nd-amber);
+  font-size: 11.00px;
+  margin-right: 6.00px;
+}
+.nd-section__title {
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+  font-size: 16.00px;
+  font-weight: 700;
+  letter-spacing: 1.50px;
+}
+.nd-section__line {
+  flex: 1;
+  height: 1.00px;
+  margin-left: 10.00px;
+  background-image: linear-gradient(to right, var(--nd-line) 60%, transparent 0);
+  background-size: 6.00px 1.00px;
+  background-repeat: repeat-x;
+}
+.nd-section__extra {
+  font-size: 11.50px;
+  color: var(--nd-ink-3);
+  margin-left: 8.00px;
+}
+
+/* ---------- 票根 ---------- */
+.nd-ticket {
+  position: relative;
+  background: var(--nd-card);
+  border: 1.00px solid var(--nd-line);
+  border-radius: 5.00px;
+  overflow: hidden;
+}
+.nd-ticket__body { padding: 14.00px; }
+/* 撕口虚线：左右两个圆缺口 */
+.nd-perf {
+  position: relative;
+  height: 1.00px;
+  margin: 0 15.00px;
+  background-image: linear-gradient(to right, var(--nd-line) 55%, transparent 0);
+  background-size: 7.00px 1.00px;
+  background-repeat: repeat-x;
+}
+.nd-perf::before,
+.nd-perf::after {
+  content: '';
+  position: absolute;
+  top: -8.00px;
+  width: 16.00px;
+  height: 16.00px;
+  border-radius: 50%;
+  background: var(--nd-paper);
+  border: 1.00px solid var(--nd-line);
+}
+.nd-perf::before { left: -23.00px; }
+.nd-perf::after { right: -23.00px; }
+
+/* ---------- 按钮 ---------- */
+.nd-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46.00px;
+  border-radius: 4.00px;
+  font-size: 15.00px;
+  letter-spacing: 2.00px;
+  font-weight: 600;
+}
+.nd-btn-main {
+  background: var(--nd-amber);
+  color: #FFF8EC;
+  box-shadow: 0 3.00px 0 var(--nd-amber-deep);
+}
+.nd-btn-main:active { transform: translateY(1.50px); box-shadow: 0 1.50px 0 var(--nd-amber-deep); }
+.nd-btn-ghost {
+  background: transparent;
+  color: var(--nd-ink);
+  border: 1.00px solid var(--nd-ink);
+}
+.nd-btn-ghost:active { background: rgba(42, 36, 31, 0.06); }
+.nd-btn-soft {
+  background: var(--nd-amber-soft);
+  color: var(--nd-amber-deep);
+  border: 1.00px solid #E6CFB4;
+}
+.nd-btn-disabled {
+  background: #DED3C2;
+  color: #9C8B74;
+  box-shadow: none;
+}
+.nd-btn-sm { height: 32.00px; font-size: 12.50px; padding: 0 14.00px; letter-spacing: 1.00px; }
+
+/* ---------- 小标签 ---------- */
+.nd-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 18.00px;
+  padding: 0 6.00px;
+  border-radius: 2.00px;
+  font-size: 10.00px;
+  letter-spacing: 0.50px;
+  background: var(--nd-amber-soft);
+  color: var(--nd-amber-deep);
+  margin-right: 5.00px;
+}
+.nd-tag-moss { background: #E4E8DC; color: var(--nd-moss); }
+.nd-tag-wine { background: #F2DED9; color: var(--nd-wine); }
+.nd-tag-line { background: transparent; border: 1.00px solid var(--nd-line); color: var(--nd-ink-2); }
+
+/* 状态印章 */
+.nd-stamp {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.00px 7.00px;
+  border: 1.50px solid var(--nd-amber);
+  color: var(--nd-amber);
+  border-radius: 3.00px;
+  font-size: 11.00px;
+  font-weight: 700;
+  letter-spacing: 1.50px;
+  transform: rotate(-6deg);
+  opacity: 0.9;
+}
+.nd-stamp-moss { border-color: var(--nd-moss); color: var(--nd-moss); }
+.nd-stamp-gray { border-color: #B9AB96; color: #B9AB96; }
+.nd-stamp-wine { border-color: var(--nd-wine); color: var(--nd-wine); }
+
+/* ---------- 图标 ---------- */
+.nd-ic { width: 16.00px; height: 16.00px; flex: none; }
+.nd-ic-s { width: 13.00px; height: 13.00px; flex: none; }
+.nd-ic-l { width: 22.00px; height: 22.00px; flex: none; }
+
+/* ---------- 列表行 ---------- */
+.nd-cell {
+  display: flex;
+  align-items: center;
+  padding: 14.00px 0;
+  border-bottom: 1.00px solid var(--nd-line);
+}
+.nd-cell:last-child { border-bottom: none; }
+.nd-cell__label { margin-left: 9.00px; flex: 1; }
+
+/* ---------- 底部固定操作栏 ---------- */
+.nd-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 10.00px 14.00px calc(10.00px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(10.00px + env(safe-area-inset-bottom));
+  background: rgba(251, 246, 236, 0.97);
+  border-top: 1.00px solid var(--nd-line);
+  display: flex;
+  align-items: center;
+  z-index: 50;
+}
+
+/* ---------- 空状态 ---------- */
+.nd-empty {
+  padding: 60.00px 0;
+  text-align: center;
+  color: var(--nd-ink-3);
+}
+.nd-empty__mark {
+  font-family: 'Songti SC', serif;
+  font-size: 28.00px;
+  color: var(--nd-line);
+  letter-spacing: 4.00px;
+}
+
+/* ---------- 页脚落款 ---------- */
+.nd-foot {
+  text-align: center;
+  padding: 30.00px 0 10.00px;
+  color: var(--nd-ink-3);
+  font-size: 10.50px;
+  letter-spacing: 1.50px;
+}
+
+.reserve { padding-top: 5.00px; }
+
+/* ---------- 日期 ---------- */
+.dates { white-space: nowrap; width: 100%; }
+.date {
+  display: inline-block;
+  width: 54.00px;
+  margin-right: 7.00px;
+  padding: 8.00px 0 6.00px;
+  text-align: center;
+  background: var(--nd-card);
+  border: 1.00px solid var(--nd-line);
+  border-radius: 4.00px;
+}
+.date.is-on {
+  background: var(--nd-amber);
+  border-color: var(--nd-amber-deep);
+  box-shadow: 0 2.00px 0 var(--nd-amber-deep);
+}
+.date.is-on .date__label, .date.is-on .date__day, .date.is-on .date__mark { color: #FFF6E8; }
+.date.is-off { background: var(--nd-card-deep); opacity: 0.6; }
+.date__label { font-size: 10.50px; color: var(--nd-ink-2); letter-spacing: 0.50px; }
+.date__day {
+  font-family: 'Songti SC', 'STSong', serif;
+  font-size: 18.00px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.date__mark { font-size: 10.00px; color: var(--nd-amber); height: 14.00px; }
+.date__mark--off { color: var(--nd-ink-3); }
+.date__mark--none { color: var(--nd-line); }
+
+.showline {
+  margin-top: 10.00px;
+  padding: 9.00px 11.00px;
+  background: var(--nd-amber-soft);
+  border-left: 3.00px solid var(--nd-amber);
+  border-radius: 2.00px;
+}
+.showline__title {
+  font-family: 'Songti SC', serif;
+  font-size: 13.50px;
+  font-weight: 700;
+  letter-spacing: 1.00px;
+  color: var(--nd-amber-deep);
+}
+.showline__artist { font-size: 12.00px; color: var(--nd-amber-deep); }
+.showline__desc { display: block; margin-top: 3.00px; font-size: 10.50px; color: #8A6A4A; line-height: 1.6; }
+
+/* ---------- 时段 ---------- */
+.slots { display: flex; flex-wrap: wrap; }
+.slot {
+  width: 80.00px;
+  margin: 0 7.00px 7.00px 0;
+  padding: 7.00px 0 6.00px;
+  text-align: center;
+  background: var(--nd-card);
+  border: 1.00px solid var(--nd-line);
+  border-radius: 4.00px;
+}
+.slot:nth-child(4n) { margin-right: 0; }
+.slot.is-on { background: var(--nd-amber); border-color: var(--nd-amber-deep); }
+.slot.is-on .slot__time, .slot.is-on .slot__tip { color: #FFF6E8; }
+.slot.is-off { background: var(--nd-card-deep); opacity: 0.55; }
+.slot__time {
+  display: block;
+  font-family: 'Songti SC', serif;
+  font-size: 15.00px;
+  font-weight: 700;
+  letter-spacing: 0.50px;
+}
+.slot__tip { display: block; font-size: 9.50px; color: var(--nd-ink-3); margin-top: 1.00px; }
+.slot__tip--tight { color: var(--nd-wine); }
+
+/* ---------- 人数 ---------- */
+.people { display: flex; align-items: center; justify-content: space-between; padding: 12.00px 14.00px; }
+.people__left { display: flex; align-items: center; }
+.people__text { margin-left: 9.00px; }
+.people__num { font-size: 15.00px; font-weight: 600; letter-spacing: 1.00px; }
+.people__tip { font-size: 10.00px; color: var(--nd-ink-3); margin-top: 1.00px; }
+.stepper { display: flex; align-items: center; }
+.stepper__btn {
+  width: 31.00px; height: 31.00px;
+  border: 1.00px solid var(--nd-ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17.00px;
+  color: var(--nd-ink);
+  line-height: 1;
+}
+.stepper__btn:active { background: var(--nd-amber-soft); }
+.stepper__val {
+  width: 36.00px;
+  text-align: center;
+  font-family: 'Songti SC', serif;
+  font-size: 17.00px;
+  font-weight: 700;
+}
+
+/* ---------- 桌位图 ---------- */
+.plan {
+  padding: 14.00px 12.00px 10.00px;
+  background: var(--nd-card);
+  border: 1.00px solid var(--nd-line);
+  border-radius: 5.00px;
+  box-shadow: 0 3.00px 0 rgba(42, 36, 31, 0.04);
+}
+.stage { text-align: center; position: relative; padding-bottom: 13.00px; }
+.stage__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6.00px 22.00px;
+  background: var(--nd-night);
+  border-radius: 3.00px;
+}
+.stage__text {
+  margin-left: 6.00px;
+  font-family: 'Songti SC', serif;
+  font-size: 14.00px;
+  letter-spacing: 3.00px;
+  color: #E7C98C;
+}
+.stage__sub { font-size: 10.00px; color: var(--nd-ink-3); margin-top: 5.00px; letter-spacing: 0.50px; }
+.stage__beam {
+  height: 1.00px;
+  margin-top: 9.00px;
+  background-image: linear-gradient(to right, transparent, var(--nd-line) 20%, var(--nd-line) 80%, transparent);
+}
+
+.zone { margin-top: 13.00px; }
+.zone__head { display: flex; align-items: baseline; justify-content: space-between; }
+.zone__name {
+  font-family: 'Songti SC', serif;
+  font-size: 13.00px;
+  font-weight: 700;
+  letter-spacing: 1.00px;
+}
+.zone__meta { font-size: 10.00px; color: var(--nd-ink-3); }
+.zone__desc { font-size: 10.00px; color: var(--nd-ink-3); margin-top: 1.00px; }
+
+.tables { display: flex; flex-wrap: wrap; margin-top: 7.00px; }
+.tbl {
+  width: 75.00px;
+  height: 64.00px;
+  margin: 0 7.00px 7.00px 0;
+  padding: 6.00px 4.00px;
+  text-align: center;
+  border: 1.00px solid var(--nd-line);
+  border-radius: 4.00px;
+  background: #F7EEDF;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.tbl:nth-child(4n) { margin-right: 0; }
+.tbl__name {
+  font-family: 'Songti SC', serif;
+  font-size: 15.00px;
+  font-weight: 700;
+  letter-spacing: 0.50px;
+}
+.tbl__seats { font-size: 10.00px; color: var(--nd-ink-2); margin-top: 1.00px; }
+.tbl__tag { font-size: 9.00px; color: var(--nd-ink-3); margin-top: 3.00px; }
+.tbl__state { font-size: 9.00px; color: var(--nd-ink-3); margin-top: 3.00px; }
+
+.tbl.is-free { background: #F7EEDF; }
+.tbl.is-booked {
+  background: repeating-linear-gradient(45deg, #EDE3D2, #EDE3D2 3.00px, #E4D8C3 3.00px, #E4D8C3 6.00px);
+  color: #A2937E;
+  opacity: 0.8;
+}
+.tbl.is-booked .tbl__name, .tbl.is-booked .tbl__seats { color: #A2937E; }
+.tbl.is-small { background: var(--nd-card-deep); opacity: 0.6; }
+.tbl.is-on {
+  background: var(--nd-amber);
+  border-color: var(--nd-amber-deep);
+  box-shadow: 0 2.50px 0 var(--nd-amber-deep);
+}
+.tbl.is-on .tbl__name, .tbl.is-on .tbl__seats, .tbl.is-on .tbl__tag { color: #FFF6E8; }
+
+.door {
+  margin-top: 13.00px;
+  padding-top: 8.00px;
+  border-top: 1.00px dashed var(--nd-line);
+  text-align: center;
+  font-size: 10.00px;
+  color: var(--nd-ink-3);
+  letter-spacing: 1.00px;
+}
+
+/* ---------- 图例 ---------- */
+.legend { display: flex; flex-wrap: wrap; margin-top: 11.00px; }
+.legend__item {
+  display: flex;
+  align-items: center;
+  margin-right: 14.00px;
+  font-size: 10.00px;
+  color: var(--nd-ink-3);
+}
+.legend__dot {
+  width: 10.00px; height: 10.00px;
+  border-radius: 2.00px;
+  margin-right: 4.00px;
+  border: 1.00px solid var(--nd-line);
+}
+.legend__dot--free { background: #F7EEDF; }
+.legend__dot--on { background: var(--nd-amber); border-color: var(--nd-amber-deep); }
+.legend__dot--booked { background: #E4D8C3; }
+.legend__dot--small { background: var(--nd-card-deep); opacity: 0.6; }
+
+/* ---------- 底栏 ---------- */
+.bar__summary { flex: 1; min-width: 0; margin-right: 10.00px; }
+.bar__line1 { font-size: 10.50px; color: var(--nd-ink-3); }
+.bar__line2 {
+  font-size: 12.00px;
+  color: var(--nd-ink);
+  margin-top: 1.00px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar__btn { width: 110.00px; flex: none; }
+
+</style></head>
+<body>
+<div class="pv-screen">
+  <div class="pv-statusbar"><span>20:36</span><span>●●●　令　■</span></div>
+  <div class="pv-nav">
+    <span class="pv-nav__back">‹</span>
+    <span class="pv-nav__title">订一张桌子</span>
+    <span class="pv-nav__capsule"><span>···</span><span>◉</span></span>
+  </div>
+  <div class="pv-body wxpage"><div class="wx-view nd-page reserve"><div class="wx-view nd-section"><span class="wx-text nd-section__mark">一</span><span class="wx-text nd-section__title">挑个日子</span><div class="wx-view nd-section__line"></div><span class="wx-text nd-section__extra">最多提前 14 天</span></div><div class="wx-scroll-view dates" style="overflow-x:auto;overflow-y:hidden;white-space:nowrap;"><div class="wx-view date is-on"><div class="wx-view date__label">今天</div><div class="wx-view date__day">16</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">明天</div><div class="wx-view date__day">17</div><div class="wx-view date__mark">★</div></div><div class="wx-view date"><div class="wx-view date__label">后天</div><div class="wx-view date__day">18</div><div class="wx-view date__mark date__mark--none">·</div></div><div class="wx-view date is-off"><div class="wx-view date__label">周一</div><div class="wx-view date__day">19</div><div class="wx-view date__mark date__mark--off">休</div></div><div class="wx-view date"><div class="wx-view date__label">周二</div><div class="wx-view date__day">20</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">周三</div><div class="wx-view date__day">21</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">周四</div><div class="wx-view date__day">22</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">周五</div><div class="wx-view date__day">23</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">周六</div><div class="wx-view date__day">24</div><div class="wx-view date__mark">★</div></div><div class="wx-view date"><div class="wx-view date__label">周日</div><div class="wx-view date__day">25</div><div class="wx-view date__mark date__mark--none">·</div></div><div class="wx-view date is-off"><div class="wx-view date__label">周一</div><div class="wx-view date__day">26</div><div class="wx-view date__mark date__mark--off">休</div></div><div class="wx-view date"><div class="wx-view date__label">周二</div><div class="wx-view date__day">27</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">周三</div><div class="wx-view date__day">28</div><div class="wx-view date__mark">♪</div></div><div class="wx-view date"><div class="wx-view date__label">周四</div><div class="wx-view date__day">29</div><div class="wx-view date__mark">♪</div></div></div><div class="wx-view showline"><span class="wx-text showline__title">周五现场</span><span class="wx-text showline__artist"> · 巷口三人组</span><span class="wx-text showline__desc">这天来得早才有好位置，建议提前订桌。</span></div><div class="wx-view nd-section"><span class="wx-text nd-section__mark">二</span><span class="wx-text nd-section__title">几点到</span><div class="wx-view nd-section__line"></div></div><div class="wx-view slots"><div class="wx-view slot is-on"><span class="wx-text slot__time">18:30</span><span class="wx-text slot__tip">刚开门，人少</span></div><div class="wx-view slot"><span class="wx-text slot__time">19:00</span><span class="wx-text slot__tip slot__tip--tight">仅剩少量</span></div><div class="wx-view slot"><span class="wx-text slot__time">19:30</span><span class="wx-text slot__tip">可订</span></div><div class="wx-view slot"><span class="wx-text slot__time">20:00</span><span class="wx-text slot__tip slot__tip--tight">仅剩少量</span></div><div class="wx-view slot"><span class="wx-text slot__time">20:30</span><span class="wx-text slot__tip">开场</span></div><div class="wx-view slot"><span class="wx-text slot__time">21:00</span><span class="wx-text slot__tip slot__tip--tight">仅剩少量</span></div><div class="wx-view slot"><span class="wx-text slot__time">21:30</span><span class="wx-text slot__tip">可订</span></div><div class="wx-view slot"><span class="wx-text slot__time">22:00</span><span class="wx-text slot__tip">下半场</span></div></div><div class="wx-view nd-section"><span class="wx-text nd-section__mark">三</span><span class="wx-text nd-section__title">几位朋友</span><div class="wx-view nd-section__line"></div></div><div class="wx-view nd-card people"><div class="wx-view people__left"><img class="wx-image nd-ic" src="assets/icons/ic-people.png" style="object-fit:fill;" alt="" /><div class="wx-view people__text"><div class="wx-view people__num">2 位</div><div class="wx-view people__tip">超过 12 位请电话联系我们</div></div></div><div class="wx-view stepper"><div class="wx-view stepper__btn">−</div><div class="wx-view stepper__val">2</div><div class="wx-view stepper__btn">+</div></div></div><div class="wx-view nd-section"><span class="wx-text nd-section__mark">四</span><span class="wx-text nd-section__title">坐哪儿</span><div class="wx-view nd-section__line"></div><span class="wx-text nd-section__extra">点一下桌子</span></div><div class="wx-view plan"><div class="wx-view stage"><div class="wx-view stage__box"><img class="wx-image nd-ic-s" src="assets/icons/ic-mic-amber.png" style="object-fit:fill;" alt="" /><span class="wx-text stage__text">舞　台</span></div><div class="wx-view stage__sub">21:00 开场 · 巷口三人组</div><div class="wx-view stage__beam"></div></div><div class="wx-view zone"><div class="wx-view zone__head"><span class="wx-text zone__name">A · 临窗卡座</span><span class="wx-text zone__meta">低消 ¥388 · 还剩 3 桌</span></div><div class="wx-view zone__desc">靠窗软沙发，看得见街灯</div><div class="wx-view tables"><div class="wx-view tbl is-free"><div class="wx-view tbl__name">A1</div><div class="wx-view tbl__seats">4 位</div><div class="wx-view tbl__tag">靠窗第一排</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">A2</div><div class="wx-view tbl__seats">4 位</div><div class="wx-view tbl__tag">靠窗</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">A3</div><div class="wx-view tbl__seats">4 位</div><div class="wx-view tbl__tag">靠窗</div></div><div class="wx-view tbl is-booked"><div class="wx-view tbl__name">A4</div><div class="wx-view tbl__seats">6 位</div><div class="wx-view tbl__state">已订出</div></div></div></div><div class="wx-view zone"><div class="wx-view zone__head"><span class="wx-text zone__name">B · 中庭散台</span><span class="wx-text zone__meta">低消 ¥248 · 还剩 5 桌</span></div><div class="wx-view zone__desc">正对舞台，离歌声最近</div><div class="wx-view tables"><div class="wx-view tbl is-free"><div class="wx-view tbl__name">B1</div><div class="wx-view tbl__seats">2 位</div><div class="wx-view tbl__tag">台前第一桌</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">B2</div><div class="wx-view tbl__seats">2 位</div><div class="wx-view tbl__tag">台前</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">B3</div><div class="wx-view tbl__seats">4 位</div><div class="wx-view tbl__tag">正中</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">B4</div><div class="wx-view tbl__seats">4 位</div><div class="wx-view tbl__tag">正中</div></div><div class="wx-view tbl is-booked"><div class="wx-view tbl__name">B5</div><div class="wx-view tbl__seats">4 位</div><div class="wx-view tbl__state">已订出</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">B6</div><div class="wx-view tbl__seats">2 位</div><div class="wx-view tbl__tag">后排安静</div></div></div></div><div class="wx-view zone"><div class="wx-view zone__head"><span class="wx-text zone__name">C · 吧台高位</span><span class="wx-text zone__meta">低消 ¥128 · 还剩 2 桌</span></div><div class="wx-view zone__desc">一个人来也很好，可以和调酒师聊天</div><div class="wx-view tables"><div class="wx-view tbl is-small"><div class="wx-view tbl__name">C1</div><div class="wx-view tbl__seats">1 位</div><div class="wx-view tbl__state">坐不下</div></div><div class="wx-view tbl is-booked"><div class="wx-view tbl__name">C2</div><div class="wx-view tbl__seats">1 位</div><div class="wx-view tbl__state">已订出</div></div><div class="wx-view tbl is-small"><div class="wx-view tbl__name">C3</div><div class="wx-view tbl__seats">1 位</div><div class="wx-view tbl__state">坐不下</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">C4</div><div class="wx-view tbl__seats">2 位</div><div class="wx-view tbl__tag">可并座</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">C5</div><div class="wx-view tbl__seats">2 位</div><div class="wx-view tbl__tag">可并座</div></div></div></div><div class="wx-view zone"><div class="wx-view zone__head"><span class="wx-text zone__name">D · 里间小厢房</span><span class="wx-text zone__meta">低消 ¥888 · 还剩 2 桌</span></div><div class="wx-view zone__desc">可关门说话，适合聚会和生日</div><div class="wx-view tables"><div class="wx-view tbl is-free"><div class="wx-view tbl__name">厢房·南</div><div class="wx-view tbl__seats">8 位</div><div class="wx-view tbl__tag">8 人</div></div><div class="wx-view tbl is-free"><div class="wx-view tbl__name">厢房·北</div><div class="wx-view tbl__seats">10 位</div><div class="wx-view tbl__tag">10 人</div></div></div></div><div class="wx-view door">门口 · 吧台在这边进</div></div><div class="wx-view legend"><div class="wx-view legend__item"><div class="wx-view legend__dot legend__dot--free"></div><span class="wx-text">可选</span></div><div class="wx-view legend__item"><div class="wx-view legend__dot legend__dot--on"></div><span class="wx-text">已选</span></div><div class="wx-view legend__item"><div class="wx-view legend__dot legend__dot--booked"></div><span class="wx-text">已订出</span></div><div class="wx-view legend__item"><div class="wx-view legend__dot legend__dot--small"></div><span class="wx-text">人数坐不下</span></div></div><div class="wx-view nd-foot">难得民谣 · 订桌</div></div><div class="wx-view nd-bar"><div class="wx-view bar__summary"><div class="wx-view bar__line1">10月16日 周五</div><div class="wx-view bar__line2">10月16日 周五 · 18:30 · 2 位 · 挑张桌子</div></div><div class="wx-view nd-btn nd-btn-disabled bar__btn">下一步</div></div></div>
+  
+</div>
+</body></html>

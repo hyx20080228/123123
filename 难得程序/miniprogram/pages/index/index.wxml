@@ -1,0 +1,138 @@
+<view class="nd-page home">
+
+  <!-- 招牌 -->
+  <view class="hero">
+    <image class="hero__img" src="/assets/images/hero.jpg" mode="aspectFill" />
+    <view class="hero__veil"></view>
+    <view class="hero__plate">
+      <text class="hero__name">难得民谣</text>
+      <text class="hero__en">NANDE FOLK</text>
+    </view>
+    <view class="hero__slogan">{{shop.slogan}}</view>
+  </view>
+
+  <!-- 今晚 -->
+  <view class="nd-card-night tonight" bindtap="goShows">
+    <view class="nd-row-between">
+      <view class="nd-row">
+        <image class="nd-ic-s" src="/assets/icons/ic-moon-paper.png" />
+        <text class="tonight__tag">今晚</text>
+      </view>
+      <text class="tonight__date">{{tonight.md}} {{tonight.week}}</text>
+    </view>
+
+    <view class="tonight__title">{{tonight.title}}</view>
+    <view class="tonight__artist" wx:if="{{tonight.artist}}">{{tonight.artist}}</view>
+
+    <view class="tonight__meta">
+      <text wx:if="{{tonight.hasLive}}">{{tonight.start}} 开场</text>
+      <text wx:else>{{shop.hours}}</text>
+      <text class="tonight__dot">·</text>
+      <text>{{freeText}}</text>
+    </view>
+
+    <view class="tonight__desc">{{tonight.desc}}</view>
+
+    <view class="tonight__styles" wx:if="{{tonight.styleText}}">
+      <text class="tonight__style">{{tonight.styleText}}</text>
+    </view>
+  </view>
+
+  <!-- 主按钮 -->
+  <view class="cta" bindtap="goReserve">
+    <view class="nd-btn nd-btn-main">订 一 张 桌 子</view>
+  </view>
+  <view class="cta__tip">可提前 {{shop.bookAheadDays}} 天预约 · 到店为你保留 {{shop.holdMinutes}} 分钟</view>
+
+  <!-- 三个快捷 -->
+  <view class="quick">
+    <view class="quick__item" bindtap="call">
+      <image class="nd-ic" src="/assets/icons/ic-phone-amber.png" />
+      <text class="quick__text">打个电话</text>
+    </view>
+    <view class="quick__sep"></view>
+    <view class="quick__item" bindtap="openMap">
+      <image class="nd-ic" src="/assets/icons/ic-location-amber.png" />
+      <text class="quick__text">带我过去</text>
+    </view>
+    <view class="quick__sep"></view>
+    <view class="quick__item" bindtap="goShows">
+      <image class="nd-ic" src="/assets/icons/ic-note-amber.png" />
+      <text class="quick__text">这周唱啥</text>
+    </view>
+  </view>
+
+  <!-- 本周演出 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">这几天的歌</text>
+    <view class="nd-section__line"></view>
+    <text class="nd-section__extra" bindtap="goShows">全部 ›</text>
+  </view>
+
+  <scroll-view class="week" scroll-x="true" show-scrollbar="false">
+    <view class="week__item {{item.closed ? 'is-closed' : ''}}" wx:for="{{week}}" wx:key="date" data-date="{{item.date}}" bindtap="goReserveDate">
+      <view class="week__day">{{item.label}}</view>
+      <view class="week__md">{{item.md}}</view>
+      <view class="week__line"></view>
+      <view class="week__title">{{item.title}}</view>
+      <view class="week__artist">{{item.artist}}</view>
+      <view class="week__foot" wx:if="{{item.hasLive}}">{{item.start}} 开场</view>
+      <view class="week__foot" wx:else>无现场</view>
+    </view>
+  </scroll-view>
+
+  <!-- 店里有什么桌 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">店里的桌子</text>
+    <view class="nd-section__line"></view>
+    <text class="nd-section__extra" bindtap="goReserve">去选 ›</text>
+  </view>
+
+  <view class="nd-card zones">
+    <view class="zones__row" wx:for="{{zones}}" wx:key="id" bindtap="goReserve">
+      <view class="zones__badge">{{item.id}}</view>
+      <view class="nd-grow">
+        <view class="zones__name">{{item.name}} <text class="zones__count">{{item.countText}}</text></view>
+        <view class="zones__desc">{{item.desc}}</view>
+      </view>
+      <view class="zones__price">{{item.minSpendText}}</view>
+    </view>
+  </view>
+
+  <!-- 关于 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">关于难得</text>
+    <view class="nd-section__line"></view>
+  </view>
+
+  <view class="nd-card about">
+    <view class="about__text">{{shop.intro}}</view>
+    <view class="nd-perf about__perf"></view>
+    <view class="about__cell" bindtap="openMap">
+      <image class="nd-ic-s" src="/assets/icons/ic-location.png" />
+      <text class="about__cell-text">{{shop.address}}</text>
+    </view>
+    <view class="about__cell">
+      <image class="nd-ic-s" src="/assets/icons/ic-clock.png" />
+      <text class="about__cell-text">{{shop.hours}} · {{shop.closedTip}}</text>
+    </view>
+    <view class="about__cell" bindtap="call">
+      <image class="nd-ic-s" src="/assets/icons/ic-phone.png" />
+      <text class="about__cell-text">{{shop.tel}}</text>
+    </view>
+  </view>
+
+  <!-- 到店须知 -->
+  <view class="notice">
+    <view class="notice__title">到店之前</view>
+    <view class="notice__item" wx:for="{{shop.notices}}" wx:key="*this">
+      <text class="notice__dot">—</text>
+      <text class="notice__text">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="nd-foot">难得民谣 · NANDE FOLK</view>
+</view>

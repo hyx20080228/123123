@@ -1,0 +1,60 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/shows/shows",
+    "pages/orders/orders",
+    "pages/mine/mine",
+    "pages/reserve/reserve",
+    "pages/confirm/confirm",
+    "pages/order-detail/order-detail",
+    "pages/staff/staff"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#F6EFE3",
+    "navigationBarTitleText": "难得民谣",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F6EFE3",
+    "backgroundColorTop": "#F6EFE3",
+    "backgroundColorBottom": "#F6EFE3"
+  },
+  "tabBar": {
+    "color": "#9C8B74",
+    "selectedColor": "#C2743A",
+    "backgroundColor": "#FBF6EC",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "酒馆",
+        "iconPath": "assets/icons/tab-home.png",
+        "selectedIconPath": "assets/icons/tab-home-on.png"
+      },
+      {
+        "pagePath": "pages/shows/shows",
+        "text": "演出",
+        "iconPath": "assets/icons/tab-show.png",
+        "selectedIconPath": "assets/icons/tab-show-on.png"
+      },
+      {
+        "pagePath": "pages/orders/orders",
+        "text": "我的预约",
+        "iconPath": "assets/icons/tab-order.png",
+        "selectedIconPath": "assets/icons/tab-order-on.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "assets/icons/tab-mine.png",
+        "selectedIconPath": "assets/icons/tab-mine-on.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于给你指路到难得民谣"
+    }
+  }
+}

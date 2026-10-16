@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>难得民谣 · 小程序界面预览</title>
+<style>
+body{margin:0;background:#EFE5D5;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:#2A241F;
+background-image:radial-gradient(rgba(122,96,58,.06) 1px,transparent 1px);background-size:7px 7px;}
+header{padding:48px 32px 10px;text-align:center;}
+h1{font-family:'Songti SC','STSong',serif;font-size:34px;letter-spacing:8px;margin:0 0 6px;}
+.sub{color:#8A7B68;font-size:13px;letter-spacing:2px;}
+.note{max-width:760px;margin:22px auto 0;font-size:13px;line-height:1.9;color:#6B6056;background:#FBF6EC;border:1px solid #E0D2BA;border-radius:8px;padding:16px 22px;text-align:left;}
+.wrap{display:flex;flex-wrap:wrap;gap:34px;justify-content:center;padding:40px 24px 80px;}
+.g-item{width:375px;}
+.g-phone{width:375px;height:812px;border:10px solid #2A241F;border-radius:38px;overflow:hidden;box-shadow:0 18px 40px rgba(42,36,31,.22);background:#F6EFE3;}
+iframe{width:375px;height:792px;border:0;display:block;}
+.g-cap{text-align:center;margin-top:14px;font-size:14px;letter-spacing:2px;font-family:'Songti SC',serif;}
+.g-link{display:block;text-align:center;font-size:12px;color:#C2743A;margin-top:4px;text-decoration:none;}
+footer{text-align:center;padding:0 0 60px;color:#9C8B74;font-size:12px;letter-spacing:3px;}
+</style></head>
+<body>
+<header>
+  <h1>难得民谣</h1>
+  <div class="sub">NANDE FOLK · 订座小程序 一期界面预览</div>
+  <div class="note">
+    这一页是用脚本把小程序真实的 WXML / WXSS / 页面 JS 渲染出来的静态快照，改了代码重新跑
+    <code>npm run preview</code> 就会同步更新。<br />
+    它只用来看样子：点击、滑动、下单这些交互请在微信开发者工具里体验（导入 <code>难得程序/</code> 目录即可）。
+  </div>
+</header>
+<div class="wrap"><div class="g-item">
+      <div class="g-phone"><iframe src="pages_index_index.html" loading="lazy"></iframe></div>
+      <div class="g-cap">首页 · 招牌与今晚</div>
+      <a class="g-link" href="pages_index_index.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_reserve_reserve.html" loading="lazy"></iframe></div>
+      <div class="g-cap">订桌 · 日子/时段/人数/桌位图</div>
+      <a class="g-link" href="pages_reserve_reserve.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_confirm_confirm.html" loading="lazy"></iframe></div>
+      <div class="g-cap">确认 · 票根摘要与留言</div>
+      <a class="g-link" href="pages_confirm_confirm.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_order-detail_order-detail.html" loading="lazy"></iframe></div>
+      <div class="g-cap">凭条 · 到店出示</div>
+      <a class="g-link" href="pages_order-detail_order-detail.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_orders_orders.html" loading="lazy"></iframe></div>
+      <div class="g-cap">我的预约 · 列表</div>
+      <a class="g-link" href="pages_orders_orders.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_shows_shows.html" loading="lazy"></iframe></div>
+      <div class="g-cap">演出 · 两周歌单</div>
+      <a class="g-link" href="pages_shows_shows.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_mine_mine.html" loading="lazy"></iframe></div>
+      <div class="g-cap">我的 · 名片与路线图</div>
+      <a class="g-link" href="pages_mine_mine.html" target="_blank">单独打开 ›</a>
+    </div><div class="g-item">
+      <div class="g-phone"><iframe src="pages_staff_staff.html" loading="lazy"></iframe></div>
+      <div class="g-cap">店员 · 吧台看今日订桌</div>
+      <a class="g-link" href="pages_staff_staff.html" target="_blank">单独打开 ›</a>
+    </div></div>
+<footer>难得今宵，难得你来</footer>
+</body></html>

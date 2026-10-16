@@ -1,0 +1,77 @@
+.confirm { padding-top: 24rpx; }
+
+/* 票根摘要 */
+.stub { box-shadow: 0 6rpx 0 rgba(42, 36, 31, 0.05); }
+.stub__top { display: flex; align-items: center; justify-content: space-between; padding: 30rpx 32rpx 26rpx; }
+.stub__date {
+  font-family: 'Songti SC', 'STSong', serif;
+  font-size: 38rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.stub__slot { font-size: 24rpx; color: var(--nd-ink-2); margin-top: 4rpx; letter-spacing: 2rpx; }
+.stub__right { text-align: right; }
+.stub__table {
+  font-family: 'Songti SC', serif;
+  font-size: 38rpx;
+  font-weight: 700;
+  color: var(--nd-amber-deep);
+  letter-spacing: 2rpx;
+}
+.stub__zone { font-size: 22rpx; color: var(--nd-ink-3); margin-top: 4rpx; }
+.stub__bottom { display: flex; padding: 24rpx 32rpx 28rpx; }
+.stub__item { flex: 1; }
+.stub__k { display: block; font-size: 20rpx; color: var(--nd-ink-3); letter-spacing: 1rpx; }
+.stub__v { display: block; font-size: 26rpx; margin-top: 4rpx; font-weight: 600; }
+
+/* 表单 */
+.form { padding: 4rpx 28rpx; }
+.field { display: flex; align-items: center; padding: 26rpx 0; border-bottom: 2rpx solid var(--nd-line); }
+.field:last-child { border-bottom: none; }
+.field__label { width: 150rpx; font-size: 26rpx; color: var(--nd-ink-2); letter-spacing: 2rpx; flex: none; }
+.field__input { flex: 1; font-size: 28rpx; color: var(--nd-ink); }
+.field__ph { color: #BCAD97; font-size: 24rpx; }
+
+/* 标签 */
+.tags { display: flex; flex-wrap: wrap; margin-bottom: 20rpx; }
+.tagpick {
+  padding: 10rpx 24rpx;
+  margin: 0 14rpx 14rpx 0;
+  font-size: 23rpx;
+  color: var(--nd-ink-2);
+  background: var(--nd-card);
+  border: 2rpx solid var(--nd-line);
+  border-radius: 40rpx;
+}
+.tagpick.is-on {
+  background: var(--nd-amber-soft);
+  border-color: var(--nd-amber);
+  color: var(--nd-amber-deep);
+  font-weight: 600;
+}
+
+.remark { width: 100%; min-height: 130rpx; font-size: 26rpx; line-height: 1.7; }
+
+/* 须知 */
+.rules {
+  margin-top: 34rpx;
+  padding: 26rpx 28rpx;
+  border: 2rpx dashed var(--nd-line);
+  border-radius: 10rpx;
+}
+.rules__title {
+  font-family: 'Songti SC', serif;
+  font-size: 25rpx;
+  letter-spacing: 4rpx;
+  color: var(--nd-ink-2);
+  margin-bottom: 10rpx;
+}
+.rules__item { display: flex; margin-top: 8rpx; }
+.rules__dot { color: var(--nd-amber); margin-right: 12rpx; font-size: 21rpx; }
+.rules__text { flex: 1; font-size: 21rpx; color: var(--nd-ink-3); line-height: 1.7; }
+
+/* 底栏 */
+.barinfo { flex: 1; min-width: 0; }
+.barinfo__l1 { font-size: 21rpx; color: var(--nd-ink-3); }
+.barinfo__l2 { font-size: 24rpx; margin-top: 2rpx; }
+.barbtn { width: 240rpx; flex: none; }

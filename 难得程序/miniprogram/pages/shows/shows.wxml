@@ -1,0 +1,45 @@
+<view class="nd-page shows">
+
+  <view class="poster">
+    <view class="poster__en">NANDE FOLK · LIVE</view>
+    <view class="poster__title">这两周的歌单</view>
+    <view class="poster__sub">没有门票，点一杯酒就能坐一晚上</view>
+    <view class="poster__rule"></view>
+  </view>
+
+  <view
+    class="show {{item.isToday ? 'is-today' : ''}} {{item.closed ? 'is-closed' : ''}}"
+    wx:for="{{shows}}"
+    wx:key="date"
+    data-item="{{item}}"
+    bindtap="book"
+  >
+    <view class="show__date">
+      <view class="show__label">{{item.label}}</view>
+      <view class="show__md">{{item.md}}</view>
+      <view class="show__today" wx:if="{{item.isToday}}">今晚</view>
+    </view>
+
+    <view class="show__body">
+      <view class="show__titlerow">
+        <text class="show__title">{{item.title}}</text>
+        <text class="show__hot" wx:if="{{item.hot}}">★ 重点场</text>
+      </view>
+      <view class="show__artist" wx:if="{{item.artist}}">{{item.artist}}</view>
+      <view class="show__desc">{{item.desc}}</view>
+      <view class="show__foot">
+        <text class="show__time" wx:if="{{item.hasLive}}">{{item.start}} 开场</text>
+        <text class="show__time" wx:else>无现场</text>
+        <text class="show__style" wx:if="{{item.styleText}}">{{item.styleText}}</text>
+        <text class="show__book" wx:if="{{!item.closed}}">订这天 ›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="tip">
+    <view class="tip__t">想上台唱歌？</view>
+    <view class="tip__d">每周二是开放麦，提前到吧台报名就行。自带吉他也可以，店里也有一把。</view>
+  </view>
+
+  <view class="nd-foot">节目可能临时调整，以店里公告为准</view>
+</view>

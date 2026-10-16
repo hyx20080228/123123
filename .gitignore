@@ -2,3 +2,6 @@
 image-search/
 # 赞诗乐队专辑封面原图（版权素材，仅本地参考用）
 docs/concepts/refs/
+
+# 难得程序：本地工具依赖（sharp 等，npm install 可重建）
+难得程序/tools/node_modules/

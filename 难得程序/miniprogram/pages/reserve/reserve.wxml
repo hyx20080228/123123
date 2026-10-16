@@ -1,0 +1,143 @@
+<view class="nd-page reserve">
+
+  <!-- 1. 挑个日子 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">一</text>
+    <text class="nd-section__title">挑个日子</text>
+    <view class="nd-section__line"></view>
+    <text class="nd-section__extra">最多提前 14 天</text>
+  </view>
+
+  <scroll-view class="dates" scroll-x="true" show-scrollbar="false">
+    <view
+      class="date {{date === item.ymd ? 'is-on' : ''}} {{item.closed ? 'is-off' : ''}}"
+      wx:for="{{dates}}"
+      wx:key="ymd"
+      data-item="{{item}}"
+      bindtap="onDateTap"
+    >
+      <view class="date__label">{{item.label}}</view>
+      <view class="date__day">{{item.day}}</view>
+      <view class="date__mark" wx:if="{{item.hot}}">★</view>
+      <view class="date__mark" wx:elif="{{item.hasLive}}">♪</view>
+      <view class="date__mark date__mark--off" wx:elif="{{item.closed}}">休</view>
+      <view class="date__mark date__mark--none" wx:else>·</view>
+    </view>
+  </scroll-view>
+
+  <view class="showline" wx:if="{{show}}">
+    <text class="showline__title">{{show.title}}</text>
+    <text class="showline__artist" wx:if="{{show.artist}}"> · {{show.artist}}</text>
+    <text class="showline__desc">{{show.desc}}</text>
+  </view>
+
+  <!-- 2. 几点到 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">二</text>
+    <text class="nd-section__title">几点到</text>
+    <view class="nd-section__line"></view>
+  </view>
+
+  <view class="slots">
+    <view
+      class="slot {{slot === item.time ? 'is-on' : ''}} {{item.disabled ? 'is-off' : ''}}"
+      wx:for="{{slots}}"
+      wx:key="time"
+      data-item="{{item}}"
+      bindtap="onSlotTap"
+    >
+      <text class="slot__time">{{item.time}}</text>
+      <text class="slot__tip" wx:if="{{item.disabled}}">{{item.reason}}</text>
+      <text class="slot__tip slot__tip--tight" wx:elif="{{item.tight}}">仅剩少量</text>
+      <text class="slot__tip" wx:elif="{{item.tip}}">{{item.tip}}</text>
+      <text class="slot__tip" wx:else>可订</text>
+    </view>
+  </view>
+
+  <!-- 3. 几位朋友 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">三</text>
+    <text class="nd-section__title">几位朋友</text>
+    <view class="nd-section__line"></view>
+  </view>
+
+  <view class="nd-card people">
+    <view class="people__left">
+      <image class="nd-ic" src="/assets/icons/ic-people.png" />
+      <view class="people__text">
+        <view class="people__num">{{people}} 位</view>
+        <view class="people__tip">超过 {{maxPeople}} 位请电话联系我们</view>
+      </view>
+    </view>
+    <view class="stepper">
+      <view class="stepper__btn" bindtap="minus">−</view>
+      <view class="stepper__val">{{people}}</view>
+      <view class="stepper__btn" bindtap="plus">+</view>
+    </view>
+  </view>
+
+  <!-- 4. 坐哪儿 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">四</text>
+    <text class="nd-section__title">坐哪儿</text>
+    <view class="nd-section__line"></view>
+    <text class="nd-section__extra">点一下桌子</text>
+  </view>
+
+  <view class="plan">
+    <view class="stage">
+      <view class="stage__box">
+        <image class="nd-ic-s" src="/assets/icons/ic-mic-amber.png" />
+        <text class="stage__text">舞　台</text>
+      </view>
+      <view class="stage__sub" wx:if="{{show.hasLive}}">{{show.start}} 开场 · {{show.artist}}</view>
+      <view class="stage__sub" wx:else>今晚没有现场，只放唱片</view>
+      <view class="stage__beam"></view>
+    </view>
+
+    <view class="zone" wx:for="{{zones}}" wx:key="id">
+      <view class="zone__head">
+        <text class="zone__name">{{item.id}} · {{item.name}}</text>
+        <text class="zone__meta">{{item.minSpendText}} · 还剩 {{item.freeCount}} 桌</text>
+      </view>
+      <view class="zone__desc">{{item.desc}}</view>
+      <view class="tables">
+        <view
+          class="tbl is-{{t.state}} {{tableId === t.id ? 'is-on' : ''}}"
+          wx:for="{{item.tables}}"
+          wx:for-item="t"
+          wx:key="id"
+          data-table="{{t}}"
+          bindtap="onTableTap"
+        >
+          <view class="tbl__name">{{t.name}}</view>
+          <view class="tbl__seats">{{t.seatText}}</view>
+          <view class="tbl__state" wx:if="{{t.booked}}">已订出</view>
+          <view class="tbl__state" wx:elif="{{t.tooSmall}}">坐不下</view>
+          <view class="tbl__tag" wx:elif="{{t.tag}}">{{t.tag}}</view>
+          <view class="tbl__tag" wx:else>空桌</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="door">门口 · 吧台在这边进</view>
+  </view>
+
+  <view class="legend">
+    <view class="legend__item"><view class="legend__dot legend__dot--free"></view><text>可选</text></view>
+    <view class="legend__item"><view class="legend__dot legend__dot--on"></view><text>已选</text></view>
+    <view class="legend__item"><view class="legend__dot legend__dot--booked"></view><text>已订出</text></view>
+    <view class="legend__item"><view class="legend__dot legend__dot--small"></view><text>人数坐不下</text></view>
+  </view>
+
+  <view class="nd-foot">难得民谣 · 订桌</view>
+</view>
+
+<!-- 底部操作栏 -->
+<view class="nd-bar">
+  <view class="bar__summary">
+    <view class="bar__line1">{{dateLabel}}</view>
+    <view class="bar__line2">{{summary}}</view>
+  </view>
+  <view class="nd-btn {{canNext ? 'nd-btn-main' : 'nd-btn-disabled'}} bar__btn" bindtap="next">下一步</view>
+</view>

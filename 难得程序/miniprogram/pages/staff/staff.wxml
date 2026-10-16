@@ -1,0 +1,58 @@
+<view class="nd-page staff">
+
+  <!-- 口令 -->
+  <view wx:if="{{!unlocked}}" class="gate">
+    <view class="gate__mark">✦</view>
+    <view class="gate__t">店员模式</view>
+    <view class="gate__d">吧台用的，输个口令进来</view>
+    <input class="gate__input" value="{{pwd}}" bindinput="onPwd" placeholder="口令" placeholder-class="gate__ph" password />
+    <view class="nd-btn nd-btn-main gate__btn" bindtap="unlock">进去</view>
+    <view class="gate__hint">试用口令：nande</view>
+  </view>
+
+  <!-- 今日 -->
+  <view wx:else>
+    <view class="head">
+      <view>
+        <view class="head__t">今天的订桌</view>
+        <view class="head__d">{{today}}</view>
+      </view>
+      <view class="head__stat">
+        <view class="hs"><text class="hs__n">{{stat.tables}}</text><text class="hs__k">桌</text></view>
+        <view class="hs"><text class="hs__n">{{stat.people}}</text><text class="hs__k">人</text></view>
+        <view class="hs"><text class="hs__n hs__n--warn">{{stat.pending}}</text><text class="hs__k">待确认</text></view>
+      </view>
+    </view>
+
+    <view wx:if="{{orders.length}}">
+      <view class="so" wx:for="{{orders}}" wx:key="id">
+        <view class="so__head">
+          <text class="so__slot">{{item.slot}}</text>
+          <text class="so__table">{{item.zoneName}} {{item.tableName}}</text>
+          <text class="so__status so__status--{{item.status}}">{{item.statusText}}</text>
+        </view>
+        <view class="so__guest">
+          <text class="so__name">{{item.name}}</text>
+          <text class="so__people">{{item.people}} 位</text>
+          <text class="so__phone" data-phone="{{item.phone}}" bindtap="callGuest">{{item.phone}} ☎</text>
+        </view>
+        <view class="so__remark" wx:if="{{item.remark}}">备注：{{item.remark}}</view>
+        <view class="so__code">{{item.code}} · 低消 ¥{{item.minSpend}}</view>
+        <view class="so__acts">
+          <view class="sbtn" wx:if="{{item.status === 'pending'}}" data-id="{{item.id}}" data-status="confirmed" bindtap="act">确认留座</view>
+          <view class="sbtn" wx:if="{{item.status === 'confirmed'}}" data-id="{{item.id}}" data-status="seated" bindtap="act">已到店</view>
+          <view class="sbtn" wx:if="{{item.status === 'seated'}}" data-id="{{item.id}}" data-status="done" bindtap="act">结账完成</view>
+          <view class="sbtn sbtn--ghost" wx:if="{{item.status === 'pending' || item.status === 'confirmed'}}" data-id="{{item.id}}" data-status="cancelled" bindtap="act">取消</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="nd-empty" wx:elif="{{loaded}}">
+      <view class="nd-empty__mark">♪</view>
+      <view class="empty__t">今天还没有人订桌</view>
+      <view class="empty__d">等客人来</view>
+    </view>
+
+    <view class="nd-foot">下拉可以刷新 · 一期数据存在本机，二期上云后多台手机同步</view>
+  </view>
+</view>

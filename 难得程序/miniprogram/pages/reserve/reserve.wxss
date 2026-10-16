@@ -1,0 +1,224 @@
+.reserve { padding-top: 10rpx; }
+
+/* ---------- 日期 ---------- */
+.dates { white-space: nowrap; width: 100%; }
+.date {
+  display: inline-block;
+  width: 108rpx;
+  margin-right: 14rpx;
+  padding: 16rpx 0 12rpx;
+  text-align: center;
+  background: var(--nd-card);
+  border: 2rpx solid var(--nd-line);
+  border-radius: 8rpx;
+}
+.date.is-on {
+  background: var(--nd-amber);
+  border-color: var(--nd-amber-deep);
+  box-shadow: 0 4rpx 0 var(--nd-amber-deep);
+}
+.date.is-on .date__label, .date.is-on .date__day, .date.is-on .date__mark { color: #FFF6E8; }
+.date.is-off { background: var(--nd-card-deep); opacity: 0.6; }
+.date__label { font-size: 21rpx; color: var(--nd-ink-2); letter-spacing: 1rpx; }
+.date__day {
+  font-family: 'Songti SC', 'STSong', serif;
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.date__mark { font-size: 20rpx; color: var(--nd-amber); height: 28rpx; }
+.date__mark--off { color: var(--nd-ink-3); }
+.date__mark--none { color: var(--nd-line); }
+
+.showline {
+  margin-top: 20rpx;
+  padding: 18rpx 22rpx;
+  background: var(--nd-amber-soft);
+  border-left: 6rpx solid var(--nd-amber);
+  border-radius: 4rpx;
+}
+.showline__title {
+  font-family: 'Songti SC', serif;
+  font-size: 27rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  color: var(--nd-amber-deep);
+}
+.showline__artist { font-size: 24rpx; color: var(--nd-amber-deep); }
+.showline__desc { display: block; margin-top: 6rpx; font-size: 21rpx; color: #8A6A4A; line-height: 1.6; }
+
+/* ---------- 时段 ---------- */
+.slots { display: flex; flex-wrap: wrap; }
+.slot {
+  width: 160rpx;
+  margin: 0 14rpx 14rpx 0;
+  padding: 14rpx 0 12rpx;
+  text-align: center;
+  background: var(--nd-card);
+  border: 2rpx solid var(--nd-line);
+  border-radius: 8rpx;
+}
+.slot:nth-child(4n) { margin-right: 0; }
+.slot.is-on { background: var(--nd-amber); border-color: var(--nd-amber-deep); }
+.slot.is-on .slot__time, .slot.is-on .slot__tip { color: #FFF6E8; }
+.slot.is-off { background: var(--nd-card-deep); opacity: 0.55; }
+.slot__time {
+  display: block;
+  font-family: 'Songti SC', serif;
+  font-size: 30rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+.slot__tip { display: block; font-size: 19rpx; color: var(--nd-ink-3); margin-top: 2rpx; }
+.slot__tip--tight { color: var(--nd-wine); }
+
+/* ---------- 人数 ---------- */
+.people { display: flex; align-items: center; justify-content: space-between; padding: 24rpx 28rpx; }
+.people__left { display: flex; align-items: center; }
+.people__text { margin-left: 18rpx; }
+.people__num { font-size: 30rpx; font-weight: 600; letter-spacing: 2rpx; }
+.people__tip { font-size: 20rpx; color: var(--nd-ink-3); margin-top: 2rpx; }
+.stepper { display: flex; align-items: center; }
+.stepper__btn {
+  width: 62rpx; height: 62rpx;
+  border: 2rpx solid var(--nd-ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34rpx;
+  color: var(--nd-ink);
+  line-height: 1;
+}
+.stepper__btn:active { background: var(--nd-amber-soft); }
+.stepper__val {
+  width: 72rpx;
+  text-align: center;
+  font-family: 'Songti SC', serif;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+/* ---------- 桌位图 ---------- */
+.plan {
+  padding: 28rpx 24rpx 20rpx;
+  background: var(--nd-card);
+  border: 2rpx solid var(--nd-line);
+  border-radius: 10rpx;
+  box-shadow: 0 6rpx 0 rgba(42, 36, 31, 0.04);
+}
+.stage { text-align: center; position: relative; padding-bottom: 26rpx; }
+.stage__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 44rpx;
+  background: var(--nd-night);
+  border-radius: 6rpx;
+}
+.stage__text {
+  margin-left: 12rpx;
+  font-family: 'Songti SC', serif;
+  font-size: 28rpx;
+  letter-spacing: 6rpx;
+  color: #E7C98C;
+}
+.stage__sub { font-size: 20rpx; color: var(--nd-ink-3); margin-top: 10rpx; letter-spacing: 1rpx; }
+.stage__beam {
+  height: 2rpx;
+  margin-top: 18rpx;
+  background-image: linear-gradient(to right, transparent, var(--nd-line) 20%, var(--nd-line) 80%, transparent);
+}
+
+.zone { margin-top: 26rpx; }
+.zone__head { display: flex; align-items: baseline; justify-content: space-between; }
+.zone__name {
+  font-family: 'Songti SC', serif;
+  font-size: 26rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+.zone__meta { font-size: 20rpx; color: var(--nd-ink-3); }
+.zone__desc { font-size: 20rpx; color: var(--nd-ink-3); margin-top: 2rpx; }
+
+.tables { display: flex; flex-wrap: wrap; margin-top: 14rpx; }
+.tbl {
+  width: 150rpx;
+  height: 128rpx;
+  margin: 0 14rpx 14rpx 0;
+  padding: 12rpx 8rpx;
+  text-align: center;
+  border: 2rpx solid var(--nd-line);
+  border-radius: 8rpx;
+  background: #F7EEDF;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.tbl:nth-child(4n) { margin-right: 0; }
+.tbl__name {
+  font-family: 'Songti SC', serif;
+  font-size: 30rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+.tbl__seats { font-size: 20rpx; color: var(--nd-ink-2); margin-top: 2rpx; }
+.tbl__tag { font-size: 18rpx; color: var(--nd-ink-3); margin-top: 6rpx; }
+.tbl__state { font-size: 18rpx; color: var(--nd-ink-3); margin-top: 6rpx; }
+
+.tbl.is-free { background: #F7EEDF; }
+.tbl.is-booked {
+  background: repeating-linear-gradient(45deg, #EDE3D2, #EDE3D2 6rpx, #E4D8C3 6rpx, #E4D8C3 12rpx);
+  color: #A2937E;
+  opacity: 0.8;
+}
+.tbl.is-booked .tbl__name, .tbl.is-booked .tbl__seats { color: #A2937E; }
+.tbl.is-small { background: var(--nd-card-deep); opacity: 0.6; }
+.tbl.is-on {
+  background: var(--nd-amber);
+  border-color: var(--nd-amber-deep);
+  box-shadow: 0 5rpx 0 var(--nd-amber-deep);
+}
+.tbl.is-on .tbl__name, .tbl.is-on .tbl__seats, .tbl.is-on .tbl__tag { color: #FFF6E8; }
+
+.door {
+  margin-top: 26rpx;
+  padding-top: 16rpx;
+  border-top: 2rpx dashed var(--nd-line);
+  text-align: center;
+  font-size: 20rpx;
+  color: var(--nd-ink-3);
+  letter-spacing: 2rpx;
+}
+
+/* ---------- 图例 ---------- */
+.legend { display: flex; flex-wrap: wrap; margin-top: 22rpx; }
+.legend__item {
+  display: flex;
+  align-items: center;
+  margin-right: 28rpx;
+  font-size: 20rpx;
+  color: var(--nd-ink-3);
+}
+.legend__dot {
+  width: 20rpx; height: 20rpx;
+  border-radius: 4rpx;
+  margin-right: 8rpx;
+  border: 2rpx solid var(--nd-line);
+}
+.legend__dot--free { background: #F7EEDF; }
+.legend__dot--on { background: var(--nd-amber); border-color: var(--nd-amber-deep); }
+.legend__dot--booked { background: #E4D8C3; }
+.legend__dot--small { background: var(--nd-card-deep); opacity: 0.6; }
+
+/* ---------- 底栏 ---------- */
+.bar__summary { flex: 1; min-width: 0; margin-right: 20rpx; }
+.bar__line1 { font-size: 21rpx; color: var(--nd-ink-3); }
+.bar__line2 {
+  font-size: 24rpx;
+  color: var(--nd-ink);
+  margin-top: 2rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar__btn { width: 220rpx; flex: none; }

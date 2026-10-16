@@ -1,0 +1,8 @@
+{
+  "description": "本地开发用的私有配置（不会上传到微信后台）",
+  "projectname": "难得民谣",
+  "setting": {
+    "compileHotReLoad": true,
+    "urlCheck": false
+  }
+}

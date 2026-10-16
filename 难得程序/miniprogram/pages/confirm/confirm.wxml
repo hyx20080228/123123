@@ -1,0 +1,99 @@
+<view class="nd-page confirm" wx:if="{{draft}}">
+
+  <!-- 票根式摘要 -->
+  <view class="nd-ticket stub">
+    <view class="stub__top">
+      <view class="stub__left">
+        <view class="stub__date">{{draft.dateLabel}}</view>
+        <view class="stub__slot">{{draft.slot}}</view>
+      </view>
+      <view class="stub__right">
+        <view class="stub__table">{{draft.tableName}}</view>
+        <view class="stub__zone">{{draft.zoneName}}</view>
+      </view>
+    </view>
+    <view class="nd-perf"></view>
+    <view class="stub__bottom">
+      <view class="stub__item">
+        <text class="stub__k">人数</text>
+        <text class="stub__v">{{draft.people}} 位</text>
+      </view>
+      <view class="stub__item">
+        <text class="stub__k">最低消费</text>
+        <text class="stub__v">¥{{draft.minSpend}}</text>
+      </view>
+      <view class="stub__item">
+        <text class="stub__k">今晚</text>
+        <text class="stub__v" wx:if="{{show.hasLive}}">{{show.title}}</text>
+        <text class="stub__v" wx:else>无现场</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 联系方式 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">留个称呼</text>
+    <view class="nd-section__line"></view>
+  </view>
+
+  <view class="nd-card form">
+    <view class="field">
+      <text class="field__label">怎么称呼</text>
+      <input class="field__input" value="{{name}}" placeholder="比如：李先生 / 小周" placeholder-class="field__ph" bindinput="onName" maxlength="12" />
+    </view>
+    <view class="field">
+      <text class="field__label">手机号</text>
+      <input class="field__input" value="{{phone}}" type="number" placeholder="到店前我们可能会联系你" placeholder-class="field__ph" bindinput="onPhone" maxlength="11" />
+    </view>
+  </view>
+
+  <!-- 备注 -->
+  <view class="nd-section">
+    <text class="nd-section__mark">✦</text>
+    <text class="nd-section__title">想说点什么</text>
+    <view class="nd-section__line"></view>
+    <text class="nd-section__extra">可不填</text>
+  </view>
+
+  <view class="tags">
+    <view
+      class="tagpick {{picked.indexOf(item) > -1 ? 'is-on' : ''}}"
+      wx:for="{{tags}}"
+      wx:key="*this"
+      data-tag="{{item}}"
+      bindtap="toggleTag"
+    >{{item}}</view>
+  </view>
+
+  <view class="nd-card">
+    <textarea
+      class="remark"
+      value="{{remark}}"
+      bindinput="onRemark"
+      placeholder="比如：想坐安静一点的角落 / 朋友过生日，能不能帮忙唱一首"
+      placeholder-class="field__ph"
+      maxlength="80"
+      auto-height
+    />
+  </view>
+
+  <!-- 须知 -->
+  <view class="rules">
+    <view class="rules__title">订座须知</view>
+    <view class="rules__item" wx:for="{{notices}}" wx:key="*this">
+      <text class="rules__dot">—</text>
+      <text class="rules__text">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="nd-foot">提交后店里会尽快确认，通常十分钟内</view>
+</view>
+
+<view class="nd-bar" wx:if="{{draft}}">
+  <view class="barinfo">
+    <view class="barinfo__l1">{{draft.dateLabel}} {{draft.slot}}</view>
+    <view class="barinfo__l2">{{draft.zoneName}} {{draft.tableName}} · {{draft.people}} 位</view>
+  </view>
+  <view class="nd-btn nd-btn-main barbtn" bindtap="submit">确认订座</view>
+</view>
